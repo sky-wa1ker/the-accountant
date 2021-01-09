@@ -30,10 +30,11 @@ client.remove_command('help')
 async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
+    transaction_scanner.start()
     print('Online as {0.user}'.format(client))
 
 
-'''
+
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -44,7 +45,7 @@ async def on_command_error(ctx, error):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
         await ctx.send('There was some error, see if you\'re using the command right. (!b help).')
-'''
+
 
 
 @client.command()
@@ -52,35 +53,6 @@ async def on_command_error(ctx, error):
 async def ping(ctx):
     await ctx.send(f'Pong! {round(client.latency*1000)}ms')
 
-
-
-@client.command()
-async def test(ctx):
-    role = discord.utils.get(ctx.guild.roles, id=788453390081720331)
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id=176311&s_only&min_tx_id=62723954') as r:
-            json_obj = await r.json()
-            transanction = json_obj["data"][0]
-            embed = discord.Embed(title='Markovia made a deposit into Arrgh bank.', description=f'''
-Transanction ID : **{transanction['tx_id']}**
-Date and time : {transanction['tx_datetime']}
-Note : {transanction['note']}
-
-**Contents**:
-    Money : ${transanction['money']}
-    Coal : {transanction['coal']}
-    Oil : {transanction['oil']}
-    Iron : {transanction['iron']}
-    Bauxite : {transanction['bauxite']}
-    Lead : {transanction['lead']}
-    Gasoline : {transanction['gasoline']}
-    Munitions : {transanction['munitions']}
-    Steel : {transanction['steel']}
-    Aluminum : {transanction['aluminum']}
-    Food : {transanction['food']}
-            ''')
-            await ctx.send(f'{role.mention}')
-            await ctx.send(embed=embed)
 
 
 @client.command()
@@ -118,8 +90,10 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
 
 
 
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=30)
 async def transaction_scanner():
+    #role = discord.utils.get(client.get_guild(220361410616492033).roles, id=788453390081720331)
+    channel = client.get_channel(520567638779232256)
     members = db.accounts.find({})
     for x in members:
         async with aiohttp.ClientSession() as session:
@@ -131,31 +105,36 @@ async def transaction_scanner():
                         transaction['processed'] = False
                         db.transactions.insert_one(transaction)
                         if transaction['sender_id'] == 913:
-                            header_message = f'{x['nation_name']} made a withdrawal from Arrgh bank.'
+                            header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
                             dcolor = 15158332
                         elif transaction['receiver_id'] == 913:
-                            header_message = f'{x['nation_name']} made a deposit into Arrgh bank.'
+                            header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
                             dcolor = 3066993
                         else:
+                            header_message = 'Hmmmm'
                             dcolor = discord.Color.default()
                         embed = discord.Embed(title=header_message, description=f'''
-Transanction ID : **{transanction['tx_id']}**
-Date and time : {transanction['tx_datetime']}
-Note : {transanction['note']}
+Transanction ID : **{transaction['tx_id']}**
+Date and time : {transaction['tx_datetime']}
+Note : {transaction['note']}
 
 **Contents**:
-    Money : ${transanction['money']}
-    Coal : {transanction['coal']}
-    Oil : {transanction['oil']}
-    Iron : {transanction['iron']}
-    Bauxite : {transanction['bauxite']}
-    Lead : {transanction['lead']}
-    Gasoline : {transanction['gasoline']}
-    Munitions : {transanction['munitions']}
-    Steel : {transanction['steel']}
-    Aluminum : {transanction['aluminum']}
-    Food : {transanction['food']}''', color=dcolor)
-                        await ctx.send
+    Money : ${transaction['money']}
+    Coal : {transaction['coal']}
+    Oil : {transaction['oil']}
+    Iron : {transaction['iron']}
+    Bauxite : {transaction['bauxite']}
+    Lead : {transaction['lead']}
+    Gasoline : {transaction['gasoline']}
+    Munitions : {transaction['munitions']}
+    Steel : {transaction['steel']}
+    Aluminum : {transaction['aluminum']}
+    Food : {transaction['food']}''', color=dcolor)
+                        #await channel.send(f'{role.mention}')
+                        await channel.send(embed=embed)
+                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                    db.accounts.update_one({'_id':x["_id"]}, {'last_transaction_id':last_transaction})
+                    
 
 
             
