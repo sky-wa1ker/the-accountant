@@ -56,12 +56,12 @@ async def ping(ctx):
 
 @client.command()
 async def test(ctx):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    role = discord.utils.get(ctx.guild.roles, id=788453390081720331)
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id=176311&s_only&min_tx_id=62723954') as r:
             json_obj = await r.json()
             transanction = json_obj["data"][0]
-            embed = discord.Embed(title=f'{role.mention} Markovia made a deposit into Arrgh bank.', description=f'''
+            embed = discord.Embed(title='Markovia made a deposit into Arrgh bank.', description=f'''
 Transanction ID : **{transanction['tx_id']}**
 Date and time : {transanction['tx_datetime']}
 Note : {transanction['note']}
@@ -79,6 +79,7 @@ Note : {transanction['note']}
     Aluminum : {transanction['aluminum']}
     Food : {transanction['food']}
             ''')
+            await ctx.send(f'{role.mention}')
             await ctx.send(embed=embed)
 
 
@@ -122,10 +123,42 @@ async def transaction_scanner():
     members = db.accounts.find({})
     for x in members:
         async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}')
+            async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}') as r:
+                transactions = r.json()
+                query = transactions['api_request']
+                if query['success']:
+                    for transaction in transactions['data']:
+                        transaction['processed'] = False
+                        db.transactions.insert_one(transaction)
+                        if transaction['sender_id'] == 913:
+                            header_message = f'{x['nation_name']} made a withdrawal from Arrgh bank.'
+                            dcolor = 15158332
+                        elif transaction['receiver_id'] == 913:
+                            header_message = f'{x['nation_name']} made a deposit into Arrgh bank.'
+                            dcolor = 3066993
+                        else:
+                            dcolor = discord.Color.default()
+                        embed = discord.Embed(title=header_message, description=f'''
+Transanction ID : **{transanction['tx_id']}**
+Date and time : {transanction['tx_datetime']}
+Note : {transanction['note']}
+
+**Contents**:
+    Money : ${transanction['money']}
+    Coal : {transanction['coal']}
+    Oil : {transanction['oil']}
+    Iron : {transanction['iron']}
+    Bauxite : {transanction['bauxite']}
+    Lead : {transanction['lead']}
+    Gasoline : {transanction['gasoline']}
+    Munitions : {transanction['munitions']}
+    Steel : {transanction['steel']}
+    Aluminum : {transanction['aluminum']}
+    Food : {transanction['food']}''', color=dcolor)
+                        await ctx.send
+
+
             
-
-
 
 
 
