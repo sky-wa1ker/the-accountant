@@ -24,4 +24,5 @@ for x in members:
         transactions = r.json()
         query = transactions['api_request']
         if query['success']:
-            print(transactions['data'])
+            for transaction in transactions:
+                print(transaction['note'])
