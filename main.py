@@ -90,29 +90,33 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
 
 
 
-@tasks.loop(minutes=30)
+@tasks.loop(minutes=1)
 async def transaction_scanner():
-    #role = discord.utils.get(client.get_guild(220361410616492033).roles, id=788453390081720331)
+    role = discord.utils.get(client.get_guild(220361410616492033).roles, id=788453390081720331)
     channel = client.get_channel(520567638779232256)
     members = db.accounts.find({})
     for x in members:
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}') as r:
-                transactions = r.json()
+                transactions = await r.json()
                 query = transactions['api_request']
                 if query['success']:
                     for transaction in transactions['data']:
-                        transaction['processed'] = False
-                        db.transactions.insert_one(transaction)
                         if transaction['sender_id'] == 913:
                             header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
                             dcolor = 15158332
+                            tx_type = 'withdrawal'
                         elif transaction['receiver_id'] == 913:
                             header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
                             dcolor = 3066993
+                            tx_type = 'deposit'
                         else:
-                            header_message = 'Hmmmm'
+                            header_message = 'Bruh, what kind of transaction is it?'
                             dcolor = discord.Color.default()
+                            tx_type = 'unknown'
+                        transaction['transaction_type'] = tx_type
+                        transaction['processed'] = False
+                        db.transactions.insert_one(transaction)
                         embed = discord.Embed(title=header_message, description=f'''
 Transanction ID : **{transaction['tx_id']}**
 Date and time : {transaction['tx_datetime']}
@@ -130,12 +134,24 @@ Note : {transaction['note']}
     Steel : {transaction['steel']}
     Aluminum : {transaction['aluminum']}
     Food : {transaction['food']}''', color=dcolor)
-                        #await channel.send(f'{role.mention}')
+                        await channel.send(f'{role.mention}')
                         await channel.send(embed=embed)
                     last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                    db.accounts.update_one({'_id':x["_id"]}, {'last_transaction_id':last_transaction})
-                    
+                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
 
+    
+
+                    
+@client.command()
+async def process(ctx, tx_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        transaction = db.transactions.find_one({'_id':tx_id})
+        if transaction['proccesed']:
+            await ctx.send('This transaction has already been processed.')
+        else:
+    else:
+        await ctx.send('Only Helm is allowed to process bank transactions.')
 
             
 
