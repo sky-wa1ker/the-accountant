@@ -1,5 +1,4 @@
-from bs4 import BeautifulSoup
-import requests
+import re
 import aiohttp
 import asyncio
 import discord
@@ -34,7 +33,7 @@ async def on_ready():
     print('Online as {0.user}'.format(client))
 
 
-
+'''
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -44,7 +43,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
-        await ctx.send('There was some error, see if you\'re using the command right. (!b help).')
+        await ctx.send('There was some error, see if you\'re using the command right. (!b help).')'''
 
 
 
@@ -74,14 +73,14 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                     json_obj = await query.json()
                                     transanctions = json_obj['data']
                                     last_transaction = (transanctions[-1]['tx_id']) + 1
-                                    db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':user.id, 'balance':{'money':0, 'coal':0.0, 'oil':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
+                                    db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':user.id, 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                     await ctx.send(f'New account added for the nation {nation_dict["name"]} and user {user.name}!')
                         else:
                             async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={nation_id}') as query:
                                 json_obj = await query.json()
                                 transanctions = json_obj['data']
                                 last_transaction = (transanctions[-1]['tx_id']) + 1
-                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'balance':{'money':0, 'coal':0.0, 'oil':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
+                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                 await ctx.send(f'New account added for {nation_dict["name"]}!')
                     else:
                         await ctx.send('Could not find this nation.')
@@ -102,40 +101,42 @@ async def transaction_scanner():
                 query = transactions['api_request']
                 if query['success']:
                     for transaction in transactions['data']:
-                        if transaction['sender_id'] == 913:
-                            header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
-                            dcolor = 15158332
-                            tx_type = 'withdrawal'
-                        elif transaction['receiver_id'] == 913:
-                            header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
-                            dcolor = 3066993
-                            tx_type = 'deposit'
-                        else:
-                            header_message = 'Bruh, what kind of transaction is it?'
-                            dcolor = discord.Color.default()
-                            tx_type = 'unknown'
-                        transaction['transaction_type'] = tx_type
-                        transaction['processed'] = False
-                        db.transactions.insert_one(transaction)
-                        embed = discord.Embed(title=header_message, description=f'''
-Transanction ID : **{transaction['tx_id']}**
-Date and time : {transaction['tx_datetime']}
-Note : {transaction['note']}
+                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913:
+                            if transaction['sender_id'] == 913:
+                                header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
+                                dcolor = 15158332
+                                tx_type = 'withdrawal'
+                            elif transaction['receiver_id'] == 913:
+                                header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
+                                dcolor = 3066993
+                                tx_type = 'deposit'
+                            else:
+                                header_message = 'Bruh, what kind of transaction is it?'
+                                dcolor = discord.Color.default()
+                                tx_type = 'unknown'
+                            transaction['transaction_type'] = tx_type
+                            transaction['processed'] = False
+                            db.transactions.insert_one(transaction)
+                            embed = discord.Embed(title=header_message, description=f'''
+    Transanction ID : **{transaction['tx_id']}**
+    Date and time : {transaction['tx_datetime']}
+    Note : {transaction['note']}
 
-**Contents**:
-    Money : ${transaction['money']}
-    Coal : {transaction['coal']}
-    Oil : {transaction['oil']}
-    Iron : {transaction['iron']}
-    Bauxite : {transaction['bauxite']}
-    Lead : {transaction['lead']}
-    Gasoline : {transaction['gasoline']}
-    Munitions : {transaction['munitions']}
-    Steel : {transaction['steel']}
-    Aluminum : {transaction['aluminum']}
-    Food : {transaction['food']}''', color=dcolor)
-                        await channel.send(f'{role.mention}')
-                        await channel.send(embed=embed)
+    **Contents**:
+        Money : ${transaction['money']}
+        Coal : {transaction['coal']}
+        Oil : {transaction['oil']}
+        Uranium : {transaction['uranium']}
+        Iron : {transaction['iron']}
+        Bauxite : {transaction['bauxite']}
+        Lead : {transaction['lead']}
+        Gasoline : {transaction['gasoline']}
+        Munitions : {transaction['munitions']}
+        Steel : {transaction['steel']}
+        Aluminum : {transaction['aluminum']}
+        Food : {transaction['food']}''', color=dcolor)
+                            await channel.send(f'{role.mention}')
+                            await channel.send(embed=embed)
                     last_transaction = (transactions['data'][-1]['tx_id']) + 1
                     db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
 
@@ -146,15 +147,92 @@ Note : {transaction['note']}
 async def process(ctx, tx_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
-        transaction = db.transactions.find_one({'_id':tx_id})
-        if transaction['proccesed']:
-            await ctx.send('This transaction has already been processed.')
+        transaction = db.transactions.find_one({'tx_id':tx_id})
+        if transaction:
+            if transaction['processed']:
+                await ctx.send('This transaction has already been processed.')
+            else:
+                if transaction['transaction_type'] == 'deposit':
+                    account = db.accounts.find_one({'_id':transaction["sender_id"]})
+                    old_bal = account["balance"]
+                    new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
+                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                    await ctx.send('Proccesed! balance updated.')
+                elif transaction['transaction_type'] == 'withdrawal':
+                    account = db.accounts.find_one({'_id':transaction["receiver_id"]})
+                    old_bal = account["balance"]
+                    new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
+                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                    await ctx.send('Proccesed! balance updated.')
         else:
+            await ctx.send('Could not find this transaction.')
     else:
         await ctx.send('Only Helm is allowed to process bank transactions.')
 
+
+
+
+@client.command()
+async def balance(ctx, nation_id:int=None):
+    if nation_id:
+        role = discord.utils.get(ctx.guild.roles, name="Helm")
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({'_id':nation_id})
+            if account:
+                balance = account["balance"]
+                await ctx.author.send(balance)
+                await ctx.send('Check DMs!')
+            else:
+                await ctx.send('I could not find this nation.')
+        else:
+            await ctx.send('Only Helm is allowed to see balance with nation_id.')
+    else:
+        role = discord.utils.get(ctx.guild.roles, name="Buccaneer")
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({"discord_id":ctx.author.id})
+            if account:
+                balance = account["balance"]
+                await ctx.author.send(balance)
+                await ctx.send('Check DMs.')
+            else:
+                await ctx.send('You either do not have an account or your discord is not connected to your account yet.')
+        else:
+            await ctx.send('I don\'t serve landlubbers.')
+
+
+@client.command()
+async def adddiscord(ctx, nation_id:int, user:discord.User):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            discord_id = account['discord_id']
+            if discord_id:
+                await ctx.send('Nation already has a discord id.')
+            else:
+                db.accounts.update_one(account, {'$set': {"discord_id":user.id}})
+                await ctx.send(f'Added {user.name}\' discord to nation {account["nation_name"]}')
+        else:
+            ctx.send('Could not find that nation.')
+    else:
+        ctx.send('You can\'t use this command, ask Helm.')
+        
+
             
 
+@client.command()
+async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
+    account = db.accounts.find_one({'_id':nation_id})
+    if account:
+        money = float(re.sub('\$|\,', '', money))
+        old_bal = account["balance"]
+        new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
+        db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+        await ctx.send('done')
+    else:
+        await ctx.send('Could not find that account.')
 
 
 

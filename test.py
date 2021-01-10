@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 import aiohttp
 import asyncio
 import discord
@@ -15,14 +16,12 @@ api_key = 'fe9ac05fb01f89'
 
 
 
-members = db.accounts.find({})
+
 
 #raw_list = [[sub['nation'], sub['leader']] for sub in nations_v2]
 
-for x in members:
-    with requests.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}') as r:
-        transactions = r.json()
-        query = transactions['api_request']
-        if query['success']:
-            for transaction in transactions['data']:
-                print(transaction)
+amount = '$5,630,577.00'
+
+stripped = re.sub('\$|\,', '', amount)
+
+print(stripped)
