@@ -19,7 +19,7 @@ db = db_client.get_database('the_accountant_db')
 token = 'Nzk1NjkwNzAxMTYxNjI3NjQ5.X_NCtg._uZ8nCcut6m-3dQAF5Ywi2kH7PA'
 api_key = 'fe9ac05fb01f89'
 
-client = commands.Bot(command_prefix = '-')
+client = commands.Bot(command_prefix = '$')
 client.remove_command('help')
 
 
@@ -33,7 +33,7 @@ async def on_ready():
     print('Online as {0.user}'.format(client))
 
 
-'''
+
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -43,7 +43,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
-        await ctx.send('There was some error, see if you\'re using the command right. (!b help).')'''
+        await ctx.send('There was some error, see if you\'re using the command right. ($help).')
 
 
 
@@ -182,7 +182,21 @@ async def balance(ctx, nation_id:int=None):
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 balance = account["balance"]
-                await ctx.author.send(balance)
+                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+                Money : {"${:,.2f}".format(balance["money"])}
+                Food : {balance["food"]}
+                Coal : {balance["coal"]}
+                Oil : {balance["oil"]}
+                Uranium : {balance["uranium"]}
+                Lead : {balance["lead"]}
+                Iron : {balance["iron"]}
+                Bauxite : {balance["bauxite"]}
+                Gasoline : {balance["gasoline"]}
+                Munitions : {balance["munitions"]}
+                Steel : {balance["steel"]}
+                Aluminum : {balance["aluminum"]}
+                ''')
+                await ctx.author.send(embed=embed)
                 await ctx.send('Check DMs!')
             else:
                 await ctx.send('I could not find this nation.')
@@ -194,7 +208,21 @@ async def balance(ctx, nation_id:int=None):
             account = db.accounts.find_one({"discord_id":ctx.author.id})
             if account:
                 balance = account["balance"]
-                await ctx.author.send(balance)
+                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+                Money : {"${:,.2f}".format(balance["money"])}
+                Food : {balance["food"]}
+                Coal : {balance["coal"]}
+                Oil : {balance["oil"]}
+                Uranium : {balance["uranium"]}
+                Lead : {balance["lead"]}
+                Iron : {balance["iron"]}
+                Bauxite : {balance["bauxite"]}
+                Gasoline : {balance["gasoline"]}
+                Munitions : {balance["munitions"]}
+                Steel : {balance["steel"]}
+                Aluminum : {balance["aluminum"]}
+                ''')
+                await ctx.author.send(embed=embed)
                 await ctx.send('Check DMs.')
             else:
                 await ctx.send('You either do not have an account or your discord is not connected to your account yet.')
@@ -235,6 +263,32 @@ async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:
         await ctx.send('Could not find that account.')
 
 
+
+@client.command()
+async def deductbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
+    account = db.accounts.find_one({'_id':nation_id})
+    if account:
+        money = float(re.sub('\$|\,', '', money))
+        old_bal = account["balance"]
+        new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
+        db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+        await ctx.send('done')
+    else:
+        await ctx.send('Could not find that account.')
+
+
+
+@client.command()
+async def forceprocess(ctx, tx_id:int):
+    transaction = db.transactions.find_one({'tx_id':tx_id})
+    if transaction:
+        if transaction['processed']:
+            await ctx.send('The transaction is already marked \"processed\".')
+        else:
+            db.transactions.update_one(transaction, {"$set":{'processed':True}})
+            await ctx.send('The transaction has been marked \"processed\", and no changes to balance were made.')
+    else:
+        await ctx.send('Could not find that transaction.')
 
 
 
