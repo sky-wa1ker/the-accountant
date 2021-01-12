@@ -1,5 +1,3 @@
-re
-os
 aiohttp
 asyncio
 discord
