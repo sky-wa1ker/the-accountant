@@ -147,7 +147,7 @@ async def dashboard_update():
     async with aiohttp.ClientSession() as session:
         async with session.get(f'http://politicsandwar.com/api/alliance-bank/?allianceid=913&key={api_key}') as r:
             json_obj = await r.json()
-            balance = json_obj["alliance_bank_contents"]
+            balance = json_obj["alliance_bank_contents"][0]
             await channel.send(f' **Arrgh in-game balance:** \n**Money** : {"${:,.2f}".format(balance["money"])}, **Food** : {balance["food"]}, **Coal** : {balance["coal"]}, **Oil** : {balance["oil"]}, **Uranium** : {balance["uranium"]}, **Lead** : {balance["lead"]}, **Iron** : {balance["iron"]}, **Bauxite** : {balance["bauxite"]}, **Gasoline** : {balance["gasoline"]}, **Munitions** : {balance["munitions"]}, **Steel** : {balance["steel"]}, **Aluminum** : {balance["aluminum"]}')
             active_accounts = db.accounts.find({"account_type": 'active'})
             if active_accounts:
