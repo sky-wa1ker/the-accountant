@@ -1,0 +1,6 @@
+re
+os
+aiohttp
+asyncio
+discord
+pymongo

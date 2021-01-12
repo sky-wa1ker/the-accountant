@@ -1,4 +1,5 @@
 import re
+import os
 import aiohttp
 import asyncio
 import discord
@@ -7,17 +8,13 @@ from discord.ext import commands, tasks
 from pymongo import MongoClient
 
 
-'''
+
 token = os.environ['token']
 api_key = os.environ['api_key']
-db_client = MongoClient('os.environ["db_access_url"]')
-'''
+db_client = MongoClient(os.environ["db_access_url"])
 
-db_client = MongoClient('mongodb+srv://bot:bot123@discord.yal7c.mongodb.net/<dbname>?retryWrites=true&w=majority')
 db = db_client.get_database('the_accountant_db')
 
-token = 'Nzk1NjkwNzAxMTYxNjI3NjQ5.X_NCtg._uZ8nCcut6m-3dQAF5Ywi2kH7PA'
-api_key = 'fe9ac05fb01f89'
 
 client = commands.Bot(command_prefix = '$')
 client.remove_command('help')
@@ -30,6 +27,7 @@ async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
     transaction_scanner.start()
+    dashboard_update.start()
     print('Online as {0.user}'.format(client))
 
 
@@ -89,10 +87,10 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
 
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=15)
 async def transaction_scanner():
-    role = discord.utils.get(client.get_guild(220361410616492033).roles, id=788453390081720331)
-    channel = client.get_channel(520567638779232256)
+    role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
+    channel = client.get_channel(798609356715196424)
     members = db.accounts.find({'account_type':'active'})
     for x in members:
         async with aiohttp.ClientSession() as session:
@@ -139,6 +137,33 @@ async def transaction_scanner():
                             await channel.send(embed=embed)
                     last_transaction = (transactions['data'][-1]['tx_id']) + 1
                     db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
+
+
+
+@tasks.loop(minutes=10)
+async def dashboard_update():
+    channel = channel = client.get_channel(798605074477482055)
+    await channel.purge()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'http://politicsandwar.com/api/alliance-bank/?allianceid=913&key={api_key}') as r:
+            json_obj = r.json()
+            balance = json_obj["alliance_bank_contents"]
+            await channel.send(f' **Arrgh in-game balance:** \n**Money** : {"${:,.2f}".format(balance["money"])}, **Food** : {balance["food"]}, **Coal** : {balance["coal"]}, **Oil** : {balance["oil"]}, **Uranium** : {balance["uranium"]}, **Lead** : {balance["lead"]}, **Iron** : {balance["iron"]}, **Bauxite** : {balance["bauxite"]}, **Gasoline** : {balance["gasoline"]}, **Munitions** : {balance["munitions"]}, **Steel** : {balance["steel"]}, **Aluminum** : {balance["aluminum"]}')
+            active_accounts = db.accounts.find({"account_type": 'active'})
+            if active_accounts:
+                await channel.send("**Active accounts:**")
+                for account in active_accounts:
+                    balance = account["balance"]
+                    embed = discord.Embed(title=f'{account["nation_name"]} | {account["_id"]}', description=f'Money : {"${:,.2f}".format(balance["money"])}, Food : {balance["food"]}, Coal : {balance["coal"]}, Oil : {balance["oil"]}, Uranium : {balance["uranium"]}, Lead : {balance["lead"]}, Iron : {balance["iron"]}, Bauxite : {balance["bauxite"]}, Gasoline : {balance["gasoline"]}, Munitions : {balance["munitions"]}, Steel : {balance["steel"]}, Aluminum : {balance["aluminum"]}')
+                    await channel.send(embed=embed)
+            inactive_accounts = db.accounts.find({"account_type": 'inactive'})
+            if inactive_accounts:
+                await channel.send("**Inactive accounts:**")
+                for account in inactive_accounts:
+                    balance = account["balance"]
+                    embed = discord.Embed(title=f'{account["nation_name"]} | {account["_id"]}', description=f'Money : {"${:,.2f}".format(balance["money"])}, Food : {balance["food"]}, Coal : {balance["coal"]}, Oil : {balance["oil"]}, Uranium : {balance["uranium"]}, Lead : {balance["lead"]}, Iron : {balance["iron"]}, Bauxite : {balance["bauxite"]}, Gasoline : {balance["gasoline"]}, Munitions : {balance["munitions"]}, Steel : {balance["steel"]}, Aluminum : {balance["aluminum"]}')
+                    await channel.send(embed=embed)
+
 
     
 
@@ -252,43 +277,74 @@ async def adddiscord(ctx, nation_id:int, user:discord.User):
 
 @client.command()
 async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
-    account = db.accounts.find_one({'_id':nation_id})
-    if account:
-        money = float(re.sub('\$|\,', '', money))
-        old_bal = account["balance"]
-        new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
-        db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-        await ctx.send('done')
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            money = float(re.sub('\$|\,', '', money))
+            old_bal = account["balance"]
+            new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
+            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+            await ctx.send('done')
+        else:
+            await ctx.send('Could not find that account.')
     else:
-        await ctx.send('Could not find that account.')
+        await ctx.send('Only Helm can do manual transactions.')
 
 
 
 @client.command()
 async def deductbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
-    account = db.accounts.find_one({'_id':nation_id})
-    if account:
-        money = float(re.sub('\$|\,', '', money))
-        old_bal = account["balance"]
-        new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
-        db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-        await ctx.send('done')
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            money = float(re.sub('\$|\,', '', money))
+            old_bal = account["balance"]
+            new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
+            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+            await ctx.send('done')
+        else:
+            await ctx.send('Could not find that account.')
     else:
-        await ctx.send('Could not find that account.')
+        await ctx.send('Only Helm can do manual transactions.')
 
 
 
 @client.command()
 async def forceprocess(ctx, tx_id:int):
-    transaction = db.transactions.find_one({'tx_id':tx_id})
-    if transaction:
-        if transaction['processed']:
-            await ctx.send('The transaction is already marked \"processed\".')
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        transaction = db.transactions.find_one({'tx_id':tx_id})
+        if transaction:
+            if transaction['processed']:
+                await ctx.send('The transaction is already marked \"processed\".')
+            else:
+                db.transactions.update_one(transaction, {"$set":{'processed':True}})
+                await ctx.send('The transaction has been marked \"processed\", and no changes to balance were made.')
         else:
-            db.transactions.update_one(transaction, {"$set":{'processed':True}})
-            await ctx.send('The transaction has been marked \"processed\", and no changes to balance were made.')
+            await ctx.send('Could not find that transaction.')
     else:
-        await ctx.send('Could not find that transaction.')
+        await ctx.send('You are not Helm.')
+
+
+
+@client.command()
+async def activityswitch(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["account_type"] == 'inactive':
+                db.accounts.update_one(account, {"$set": {"account_type": "active"}})
+                await ctx.send("Account status changed from inactive to active.")
+            elif account["account_type"] == 'active':
+                db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
+                await ctx.send("Account status changed from active to inactive.")
+        else:
+            await ctx.send('Could not find this account.')
+    else:
+        await ctx.send('You are not Helm.')
 
 
 
