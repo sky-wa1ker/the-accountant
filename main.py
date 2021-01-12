@@ -73,14 +73,14 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                     json_obj = await query.json()
                                     transanctions = json_obj['data']
                                     last_transaction = (transanctions[-1]['tx_id']) + 1
-                                    db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':user.id, 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
+                                    db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':user.id, 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                     await ctx.send(f'New account added for the nation {nation_dict["name"]} and user {user.name}!')
                         else:
                             async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={nation_id}') as query:
                                 json_obj = await query.json()
                                 transanctions = json_obj['data']
                                 last_transaction = (transanctions[-1]['tx_id']) + 1
-                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
+                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                 await ctx.send(f'New account added for {nation_dict["name"]}!')
                     else:
                         await ctx.send('Could not find this nation.')
@@ -93,7 +93,7 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
 async def transaction_scanner():
     role = discord.utils.get(client.get_guild(220361410616492033).roles, id=788453390081720331)
     channel = client.get_channel(520567638779232256)
-    members = db.accounts.find({})
+    members = db.accounts.find({'account_type':'active'})
     for x in members:
         async with aiohttp.ClientSession() as session:
             async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}') as r:
