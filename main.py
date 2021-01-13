@@ -71,7 +71,8 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                 async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={nation_id}') as query:
                                     json_obj = await query.json()
                                     transanctions = json_obj['data']
-                                    if json_obj["error_msg"] == 'No results to display.':
+                                    api_request = json_obj["api_request"]
+                                    if api_request["error_msg"] == 'No results to display.':
                                         last_transaction = None
                                     else:    
                                         last_transaction = (transanctions[-1]['tx_id']) + 1
@@ -81,7 +82,8 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                             async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={nation_id}') as query:
                                 json_obj = await query.json()
                                 transanctions = json_obj['data']
-                                if json_obj["error_msg"] == 'No results to display.':
+                                api_request = json_obj["api_request"]
+                                if api_request["error_msg"] == 'No results to display.':
                                     last_transaction = None
                                 else:    
                                     last_transaction = (transanctions[-1]['tx_id']) + 1
