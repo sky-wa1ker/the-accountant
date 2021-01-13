@@ -31,7 +31,7 @@ async def on_ready():
     print('Online as {0.user}'.format(client))
 
 
-'''
+
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -42,7 +42,7 @@ async def on_command_error(ctx, error):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
         await ctx.send('There was some error, see if you\'re using the command right. ($help).')
-        '''
+
 
 
 
@@ -79,7 +79,7 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                 json_obj = await query.json()
                                 transanctions = json_obj['data']
                                 last_transaction = (transanctions[-1]['tx_id']) + 1
-                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
+                                db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':None, 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                 await ctx.send(f'New account added for {nation_dict["name"]}!')
                     else:
                         await ctx.send('Could not find this nation.')
