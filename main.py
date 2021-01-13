@@ -72,10 +72,10 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                     json_obj = await query.json()
                                     transanctions = json_obj['data']
                                     api_request = json_obj["api_request"]
-                                    if api_request["error_msg"] == 'No results to display.':
-                                        last_transaction = None
-                                    else:    
+                                    if api_request["success"]:
                                         last_transaction = (transanctions[-1]['tx_id']) + 1
+                                    else:    
+                                        last_transaction = None
                                     db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':user.id, 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                     await ctx.send(f'New account added for the nation {nation_dict["name"]} and user {user.name}!')
                         else:
@@ -83,11 +83,10 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                                 json_obj = await query.json()
                                 transanctions = json_obj['data']
                                 api_request = json_obj["api_request"]
-                                if api_request["error_msg"] == 'No results to display.':
-                                    last_transaction = None
-                                else:    
+                                if api_request["success"]:
                                     last_transaction = (transanctions[-1]['tx_id']) + 1
-                                last_transaction = (transanctions[-1]['tx_id']) + 1
+                                else:    
+                                    last_transaction = None
                                 db.accounts.insert_one({'_id':int(nation_id), 'nation_name':nation_dict['name'], 'discord_id':None, 'account_type':'active', 'balance':{'money':0.0, 'coal':0.0, 'oil':0.0, 'uranium':0.0, 'iron':0.0, 'bauxite':0.0, 'lead':0.0, 'gasoline':0.0, 'munitions':0.0, 'steel':0.0, 'aluminum':0.0, 'food':0.0}, 'last_transaction_id':last_transaction})
                                 await ctx.send(f'New account added for {nation_dict["name"]}!')
                     else:
