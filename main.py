@@ -31,7 +31,7 @@ async def on_ready():
     print('Online as {0.user}'.format(client))
 
 
-
+'''
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -42,6 +42,7 @@ async def on_command_error(ctx, error):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
         await ctx.send('There was some error, see if you\'re using the command right. ($help).')
+        '''
 
 
 
@@ -285,7 +286,7 @@ async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:
             old_bal = account["balance"]
             new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
             db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-            await ctx.send('done')
+            await ctx.send('Balance updated')
         else:
             await ctx.send('Could not find that account.')
     else:
@@ -294,16 +295,27 @@ async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:
 
 
 @client.command()
-async def deductbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
+async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
         account = db.accounts.find_one({'_id':nation_id})
         if account:
             money = float(re.sub('\$|\,', '', money))
+            food = float(food.replace(',', ''))
+            coal = float(coal.replace(',', ''))
+            oil = float(oil.replace(',', ''))
+            uranium = float(uranium.replace(',', ''))
+            lead = float(lead.replace(',', ''))
+            iron = float(iron.replace(',', ''))
+            bauxite = float(bauxite.replace(',', ''))
+            gasoline = float(gasoline.replace(',', ''))
+            munitions = float(munitions.replace(',', ''))
+            steel = float(steel.replace(',', ''))
+            aluminum = float(aluminum.replace(',', ''))
             old_bal = account["balance"]
             new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
             db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-            await ctx.send('done')
+            await ctx.send('Balance updated.')
         else:
             await ctx.send('Could not find that account.')
     else:
