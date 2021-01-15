@@ -31,7 +31,7 @@ async def on_ready():
     print('Online as {0.user}'.format(client))
 
 
-'''
+
 @client.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
@@ -41,7 +41,7 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f'Try again in {round(error.retry_after)} seconds.')
     else:
-        await ctx.send('There was some error, see if you\'re using the command right. ($help).')'''
+        await ctx.send('There was some error, see if you\'re using the command right. ($help).')
 
 
 
@@ -50,6 +50,34 @@ async def on_command_error(ctx, error):
 @commands.cooldown(1, 120, commands.BucketType.user)
 async def ping(ctx):
     await ctx.send(f'Pong! {round(client.latency*1000)}ms')
+
+
+@client.command()
+async def help(ctx):
+    role = discord.utils.get(ctx.guild.roles, name="Buccaneer")
+    if role in ctx.author.roles:
+        await ctx.send('''
+**The Accountant Commands:**
+
+**$adduser (nation_id)** : Create a new account for a nation.
+
+**$process (transaction_id)** : Process a transaction.
+
+**$balance** : By default shows your own balance, Helm can add a nation ID to see someone else's balance.
+
+**adddiscord (nation_id) (user.mention)** : Add a discord to an account, necessary before you use balance command.
+
+**addbalance (nation_id) (contents)** : To process 3rd party transactions/add initial amount when opening an account or to correct errors, contents **MUST** be copied directly from in-game transaction or Arrgh banking sheet, DO NOT ever copy from anywhere else or try to write them down manually.
+
+**$deductbalance (nation_id) (contents)** : Self explanatory at this point I believe.
+
+**$forceprocess (transaction_id)** : To process a transaction without actually processing it, should be used in 3rd party transaction. Doesn't change the account balance but marks the transaction processed. It is important to mark every transaction processed that appears in #transactions-feed.
+
+**$activityswitch (nation_id)** : When people leave but don't take their stuff with them, mark them inactive with this command, use again to mark them active.
+
+        ''')
+
+
 
 
 
@@ -221,18 +249,18 @@ async def balance(ctx, nation_id:int=None):
             if account:
                 balance = account["balance"]
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
-                Money : {"${:,.2f}".format(balance["money"])}
-                Food : {balance["food"]}
-                Coal : {balance["coal"]}
-                Oil : {balance["oil"]}
-                Uranium : {balance["uranium"]}
-                Lead : {balance["lead"]}
-                Iron : {balance["iron"]}
-                Bauxite : {balance["bauxite"]}
-                Gasoline : {balance["gasoline"]}
-                Munitions : {balance["munitions"]}
-                Steel : {balance["steel"]}
-                Aluminum : {balance["aluminum"]}
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {balance["food"]}
+Coal : {balance["coal"]}
+Oil : {balance["oil"]}
+Uranium : {balance["uranium"]}
+Lead : {balance["lead"]}
+Iron : {balance["iron"]}
+Bauxite : {balance["bauxite"]}
+Gasoline : {balance["gasoline"]}
+Munitions : {balance["munitions"]}
+Steel : {balance["steel"]}
+Aluminum : {balance["aluminum"]}
                 ''')
                 await ctx.author.send(embed=embed)
                 await ctx.send('Check DMs!')
@@ -247,18 +275,18 @@ async def balance(ctx, nation_id:int=None):
             if account:
                 balance = account["balance"]
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
-                Money : {"${:,.2f}".format(balance["money"])}
-                Food : {balance["food"]}
-                Coal : {balance["coal"]}
-                Oil : {balance["oil"]}
-                Uranium : {balance["uranium"]}
-                Lead : {balance["lead"]}
-                Iron : {balance["iron"]}
-                Bauxite : {balance["bauxite"]}
-                Gasoline : {balance["gasoline"]}
-                Munitions : {balance["munitions"]}
-                Steel : {balance["steel"]}
-                Aluminum : {balance["aluminum"]}
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {balance["food"]}
+Coal : {balance["coal"]}
+Oil : {balance["oil"]}
+Uranium : {balance["uranium"]}
+Lead : {balance["lead"]}
+Iron : {balance["iron"]}
+Bauxite : {balance["bauxite"]}
+Gasoline : {balance["gasoline"]}
+Munitions : {balance["munitions"]}
+Steel : {balance["steel"]}
+Aluminum : {balance["aluminum"]}
                 ''')
                 await ctx.author.send(embed=embed)
                 await ctx.send('Check DMs.')
@@ -281,20 +309,31 @@ async def adddiscord(ctx, nation_id:int, user:discord.User):
                 db.accounts.update_one(account, {'$set': {"discord_id":user.id}})
                 await ctx.send(f'Added {user.name}\' discord to nation {account["nation_name"]}')
         else:
-            ctx.send('Could not find that nation.')
+            await ctx.send('Could not find that nation.')
     else:
-        ctx.send('You can\'t use this command, ask Helm.')
+        await ctx.send('You can\'t use this command, ask Helm.')
         
 
             
 
 @client.command()
-async def addbalance(ctx, nation_id:int, money:str, food:float, coal:float, oil:float, uranium:float, lead:float, iron:float, bauxite:float, gasoline:float, munitions:float, steel:float, aluminum:float):
+async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
         account = db.accounts.find_one({'_id':nation_id})
         if account:
             money = float(re.sub('\$|\,', '', money))
+            food = float(food.replace(',', ''))
+            coal = float(coal.replace(',', ''))
+            oil = float(oil.replace(',', ''))
+            uranium = float(uranium.replace(',', ''))
+            lead = float(lead.replace(',', ''))
+            iron = float(iron.replace(',', ''))
+            bauxite = float(bauxite.replace(',', ''))
+            gasoline = float(gasoline.replace(',', ''))
+            munitions = float(munitions.replace(',', ''))
+            steel = float(steel.replace(',', ''))
+            aluminum = float(aluminum.replace(',', ''))
             old_bal = account["balance"]
             new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
             db.accounts.update_one(account, {"$set": {'balance':new_bal}})
