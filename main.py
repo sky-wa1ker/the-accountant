@@ -27,7 +27,7 @@ async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
     transaction_scanner.start()
-    dashboard_update.start()
+    arrgh_bank_post.start()
     print('Online as {0.user}'.format(client))
 
 
@@ -86,7 +86,8 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
         if type(db.accounts.find_one({'_id':nation_id})) is dict:
-            await ctx.send('This nation already has an active account.')
+            account = db.accounts.find_one({'_id':nation_id})
+            await ctx.send(f'This nation already has an {account["account type"]} account.')
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'https://politicsandwar.com/api/nation/id={nation_id}&key={api_key}') as r:
@@ -182,28 +183,13 @@ async def transaction_scanner():
 
 
 @tasks.loop(minutes=15)
-async def dashboard_update():
-    channel = channel = client.get_channel(798605074477482055)
-    await channel.purge()
+async def arrgh_bank_post():
+    channel = channel = client.get_channel(797751483298480149)
     async with aiohttp.ClientSession() as session:
         async with session.get(f'http://politicsandwar.com/api/alliance-bank/?allianceid=913&key={api_key}') as r:
             json_obj = await r.json()
             balance = json_obj["alliance_bank_contents"][0]
             await channel.send(f' **Arrgh in-game balance:** \n**Money** : {"${:,.2f}".format(balance["money"])}, **Food** : {balance["food"]}, **Coal** : {balance["coal"]}, **Oil** : {balance["oil"]}, **Uranium** : {balance["uranium"]}, **Lead** : {balance["lead"]}, **Iron** : {balance["iron"]}, **Bauxite** : {balance["bauxite"]}, **Gasoline** : {balance["gasoline"]}, **Munitions** : {balance["munitions"]}, **Steel** : {balance["steel"]}, **Aluminum** : {balance["aluminum"]}')
-            active_accounts = db.accounts.find({"account_type": 'active'})
-            if active_accounts:
-                await channel.send("**Active accounts:**")
-                for account in active_accounts:
-                    balance = account["balance"]
-                    embed = discord.Embed(title=f'{account["nation_name"]} | {account["_id"]}', description=f'Money : {"${:,.2f}".format(balance["money"])}, Food : {balance["food"]}, Coal : {balance["coal"]}, Oil : {balance["oil"]}, Uranium : {balance["uranium"]}, Lead : {balance["lead"]}, Iron : {balance["iron"]}, Bauxite : {balance["bauxite"]}, Gasoline : {balance["gasoline"]}, Munitions : {balance["munitions"]}, Steel : {balance["steel"]}, Aluminum : {balance["aluminum"]}')
-                    await channel.send(embed=embed)
-            inactive_accounts = db.accounts.find({"account_type": 'inactive'})
-            if inactive_accounts:
-                await channel.send("**Inactive accounts:**")
-                for account in inactive_accounts:
-                    balance = account["balance"]
-                    embed = discord.Embed(title=f'{account["nation_name"]} | {account["_id"]}', description=f'Money : {"${:,.2f}".format(balance["money"])}, Food : {balance["food"]}, Coal : {balance["coal"]}, Oil : {balance["oil"]}, Uranium : {balance["uranium"]}, Lead : {balance["lead"]}, Iron : {balance["iron"]}, Bauxite : {balance["bauxite"]}, Gasoline : {balance["gasoline"]}, Munitions : {balance["munitions"]}, Steel : {balance["steel"]}, Aluminum : {balance["aluminum"]}')
-                    await channel.send(embed=embed)
 
 
     
@@ -240,7 +226,7 @@ async def process(ctx, tx_id:int):
 
 
 
-@client.command()
+@client.command(aliases=['bal'])
 async def balance(ctx, nation_id:int=None):
     if nation_id:
         role = discord.utils.get(ctx.guild.roles, name="Helm")
@@ -307,7 +293,7 @@ async def adddiscord(ctx, nation_id:int, user:discord.User):
                 await ctx.send('Nation already has a discord id.')
             else:
                 db.accounts.update_one(account, {'$set': {"discord_id":user.id}})
-                await ctx.send(f'Added {user.name}\' discord to nation {account["nation_name"]}')
+                await ctx.send(f'Added {user.name}\'s discord to nation {account["nation_name"]}')
         else:
             await ctx.send('Could not find that nation.')
     else:
@@ -392,7 +378,7 @@ async def forceprocess(ctx, tx_id:int):
 
 
 
-@client.command()
+@client.command(aliases=['switchactivity'])
 async def activityswitch(ctx, nation_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
