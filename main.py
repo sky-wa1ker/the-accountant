@@ -59,15 +59,15 @@ async def help(ctx):
         await ctx.send('''
 **The Accountant Commands:**
 
-**$adduser (nation_id)** : Create a new account for a nation.
+**$adduser (nation_id)** : Create a new account for a nation, make sure you set the initial balance right. (use addbalance command)
 
 **$process (transaction_id)** : Process a transaction.
 
 **$balance** : By default shows your own balance, Helm can add a nation ID to see someone else's balance.
 
-**adddiscord (nation_id) (user.mention)** : Add a discord to an account, necessary before you use balance command.
+**$adddiscord (nation_id) (user.mention)** : Add a discord to an account, necessary before you use balance command.
 
-**addbalance (nation_id) (contents)** : To process 3rd party transactions/add initial amount when opening an account or to correct errors, contents **MUST** be copied directly from in-game transaction or Arrgh banking sheet, DO NOT ever copy from anywhere else or try to write them down manually.
+**$addbalance (nation_id) (contents)** : To process 3rd party transactions/add initial amount when opening an account or to correct errors, contents **MUST** be copied directly from in-game transaction or Arrgh banking sheet, DO NOT ever copy from anywhere else or try to write them down manually.
 
 **$deductbalance (nation_id) (contents)** : Self explanatory at this point I believe.
 
@@ -76,6 +76,8 @@ async def help(ctx):
 **$activityswitch (nation_id)** : When people leave but don't take their stuff with them, mark them inactive with this command, use again to mark them active.
 
         ''')
+    else:
+        await ctx.send('I don\'t serve landlubbers.')
 
 
 
