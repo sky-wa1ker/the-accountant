@@ -89,7 +89,7 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
     if role in ctx.author.roles:
         if type(db.accounts.find_one({'_id':nation_id})) is dict:
             account = db.accounts.find_one({'_id':nation_id})
-            await ctx.send(f'This nation already has an {account["account type"]} account.')
+            await ctx.send(f'This nation already has an {account["account_type"]} account.')
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'https://politicsandwar.com/api/nation/id={nation_id}&key={api_key}') as r:
