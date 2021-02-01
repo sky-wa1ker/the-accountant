@@ -198,7 +198,7 @@ async def arrgh_bank_post():
 
 @client.command()
 async def missedtxs(ctx):
-    transactions = db.transactions.find({{"processed":False}})
+    transactions = db.transactions.find({"processed":False})
     if transactions:
         await ctx.send('Following transactions have not been processed yet.')
         for x in transactions:
