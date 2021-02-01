@@ -75,6 +75,7 @@ async def help(ctx):
 
 **$activityswitch (nation_id)** : When people leave but don't take their stuff with them, mark them inactive with this command, use again to mark them active.
 
+**$missedtxs** : Use this command to ensure you have not missed any transations.
         ''')
     else:
         await ctx.send('I don\'t serve landlubbers.')
@@ -198,8 +199,8 @@ async def arrgh_bank_post():
 
 @client.command()
 async def missedtxs(ctx):
-    transactions = db.transactions.find({"processed":False})
-    if transactions:
+    transactions = list(db.transactions.find({"processed":False}))
+    if len(transactions) > 0:
         await ctx.send('Following transactions have not been processed yet.')
         for x in transactions:
             await ctx.send(f'{x["tx_id"]}')
