@@ -196,6 +196,15 @@ async def arrgh_bank_post():
             await arrghbankmsg.delete()
 
 
+@client.command()
+async def missedtxs(ctx):
+    transactions = db.transactions.find({{"processed":False}})
+    if transactions:
+        await ctx.send('Following transactions have not been processed yet.')
+        for x in transactions:
+            await ctx.send(f'{x["tx_id"]}')
+    else:
+        await ctx.send("We\'re all caught up!")
     
 
                     
