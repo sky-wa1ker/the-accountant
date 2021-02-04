@@ -27,7 +27,6 @@ async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
     transaction_scanner.start()
-    arrgh_bank_post.start()
     print('Online as {0.user}'.format(client))
 
 
@@ -185,27 +184,21 @@ async def transaction_scanner():
 
 
 
-@tasks.loop(minutes=15)
-async def arrgh_bank_post():
-    channel = channel = client.get_channel(797751483298480149)
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f'http://politicsandwar.com/api/alliance-bank/?allianceid=913&key={api_key}') as r:
-            json_obj = await r.json()
-            balance = json_obj["alliance_bank_contents"][0]
-            arrghbankmsg = await channel.send(f' **Arrgh in-game balance:** \n**Money** : {"${:,.2f}".format(balance["money"])}, **Food** : {balance["food"]}, **Coal** : {balance["coal"]}, **Oil** : {balance["oil"]}, **Uranium** : {balance["uranium"]}, **Lead** : {balance["lead"]}, **Iron** : {balance["iron"]}, **Bauxite** : {balance["bauxite"]}, **Gasoline** : {balance["gasoline"]}, **Munitions** : {balance["munitions"]}, **Steel** : {balance["steel"]}, **Aluminum** : {balance["aluminum"]}')
-            asyncio.sleep(840)
-            await arrghbankmsg.delete()
 
 
 @client.command()
 async def missedtxs(ctx):
-    transactions = list(db.transactions.find({"processed":False}))
-    if len(transactions) > 0:
-        await ctx.send('Following transactions have not been processed yet.')
-        for x in transactions:
-            await ctx.send(f'{x["tx_id"]}')
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        transactions = list(db.transactions.find({"processed":False}))
+        if len(transactions) > 0:
+            await ctx.send('Following transactions have not been processed yet.')
+            for x in transactions:
+                await ctx.send(f'{x["tx_id"]}')
+        else:
+            await ctx.send("We\'re all caught up!")
     else:
-        await ctx.send("We\'re all caught up!")
+        await ctx.send("You are not Helm.")
     
 
                     
