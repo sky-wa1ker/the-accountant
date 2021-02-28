@@ -202,7 +202,7 @@ async def missedtxs(ctx):
     
 
                     
-@client.command()
+@client.command(aliases=['p'])
 async def process(ctx, tx_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
