@@ -393,6 +393,11 @@ async def activityswitch(ctx, nation_id:int):
         if account:
             if account["account_type"] == 'inactive':
                 db.accounts.update_one(account, {"$set": {"account_type": "active"}})
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={account["_id"]}') as r:
+                        transactions = await r.json()
+                        last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                        db.accounts.update_one(account, {"$set": {"last_transaction_id": last_transaction}})
                 await ctx.send("Account status changed from inactive to active.")
             elif account["account_type"] == 'active':
                 db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
