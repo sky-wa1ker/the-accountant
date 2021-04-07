@@ -4,6 +4,7 @@ import aiohttp
 import asyncio
 import discord
 import pymongo
+from datetime import datetime
 from discord.ext import commands, tasks
 from pymongo import MongoClient
 
@@ -177,30 +178,32 @@ async def transaction_scanner():
         Steel : {transaction['steel']}
         Aluminum : {transaction['aluminum']}
         Food : {transaction['food']}''', color=dcolor)
-                            await channel.send(f'{role.mention}')
-                            await channel.send(embed=embed)
+                            m = await channel.send(embed=embed)
+                            try:
+                                if transaction['transaction_type'] == 'deposit':
+                                    account = db.accounts.find_one({'_id':transaction["sender_id"]})
+                                    old_bal = account["balance"]
+                                    new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
+                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    await m.add_reaction('✅')
+                                elif transaction['transaction_type'] == 'withdrawal':
+                                    account = db.accounts.find_one({'_id':transaction["receiver_id"]})
+                                    old_bal = account["balance"]
+                                    new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
+                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    await m.add_reaction('✅')
+                            except:
+                                await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
+                                await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
                     last_transaction = (transactions['data'][-1]['tx_id']) + 1
                     db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
-
-
-
-
-
-@client.command()
-async def missedtxs(ctx):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
-        transactions = list(db.transactions.find({"processed":False}))
-        if len(transactions) > 0:
-            await ctx.send('Following transactions have not been processed yet.')
-            for x in transactions:
-                await ctx.send(f'{x["tx_id"]}')
-        else:
-            await ctx.send("We\'re all caught up!")
-    else:
-        await ctx.send("You are not Helm.")
+                    
     
 
+
+'''
                     
 @client.command(aliases=['p'])
 async def process(ctx, tx_id:int):
@@ -229,6 +232,26 @@ async def process(ctx, tx_id:int):
             await ctx.send('Could not find this transaction.')
     else:
         await ctx.send('Only Helm is allowed to process bank transactions.')
+
+'''
+
+
+
+
+@client.command()
+async def missedtxs(ctx):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        transactions = list(db.transactions.find({"processed":False}))
+        if len(transactions) > 0:
+            await ctx.send('Following transactions have not been processed yet.')
+            for x in transactions:
+                await ctx.send(f'{x["tx_id"]}')
+        else:
+            await ctx.send("We\'re all caught up!")
+    else:
+        await ctx.send("You are not Helm.")
+
 
 
 
@@ -366,7 +389,7 @@ async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:s
         await ctx.send('Only Helm can do manual transactions.')
 
 
-
+'''
 @client.command()
 async def forceprocess(ctx, tx_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
@@ -382,6 +405,7 @@ async def forceprocess(ctx, tx_id:int):
             await ctx.send('Could not find that transaction.')
     else:
         await ctx.send('You are not Helm.')
+'''
 
 
 
