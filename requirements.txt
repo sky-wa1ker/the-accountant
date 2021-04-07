@@ -3,3 +3,4 @@ asyncio
 discord
 pymongo
 dnspython
+datetime
