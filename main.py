@@ -199,6 +199,7 @@ async def transaction_scanner():
                                 await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
                     last_transaction = (transactions['data'][-1]['tx_id']) + 1
                     db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
+                    await asyncio.sleep(2)
                     
     
 
@@ -279,7 +280,7 @@ Steel : {balance["steel"]}
 Aluminum : {balance["aluminum"]}
                 ''')
                 await ctx.author.send(embed=embed)
-                await ctx.send('Check DMs!')
+                await ctx.message.add_reaction('📩')
             else:
                 await ctx.send('I could not find this nation.')
         else:
@@ -305,7 +306,7 @@ Steel : {balance["steel"]}
 Aluminum : {balance["aluminum"]}
                 ''')
                 await ctx.author.send(embed=embed)
-                await ctx.send('Check DMs.')
+                await ctx.message.add_reaction('📩')
             else:
                 await ctx.send('You either do not have an account or your discord is not connected to your account yet.')
         else:
@@ -333,60 +334,75 @@ async def adddiscord(ctx, nation_id:int, user:discord.User):
             
 
 @client.command()
-async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str):
+async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            money = float(re.sub('\$|\,', '', money))
-            food = float(food.replace(',', ''))
-            coal = float(coal.replace(',', ''))
-            oil = float(oil.replace(',', ''))
-            uranium = float(uranium.replace(',', ''))
-            lead = float(lead.replace(',', ''))
-            iron = float(iron.replace(',', ''))
-            bauxite = float(bauxite.replace(',', ''))
-            gasoline = float(gasoline.replace(',', ''))
-            munitions = float(munitions.replace(',', ''))
-            steel = float(steel.replace(',', ''))
-            aluminum = float(aluminum.replace(',', ''))
-            old_bal = account["balance"]
-            new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
-            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-            await ctx.send('Balance updated')
+    if ctx.channel == client.get_channel(542384682818600971):
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({'_id':nation_id})
+            if account:
+                money = float(re.sub('\$|\,', '', money))
+                food = float(food.replace(',', ''))
+                coal = float(coal.replace(',', ''))
+                oil = float(oil.replace(',', ''))
+                uranium = float(uranium.replace(',', ''))
+                lead = float(lead.replace(',', ''))
+                iron = float(iron.replace(',', ''))
+                bauxite = float(bauxite.replace(',', ''))
+                gasoline = float(gasoline.replace(',', ''))
+                munitions = float(munitions.replace(',', ''))
+                steel = float(steel.replace(',', ''))
+                aluminum = float(aluminum.replace(',', ''))
+                old_bal = account["balance"]
+                new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
+                db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
+                last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
+                last_tx_id = dict(last_tx[0])["_id"] + 1
+                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
+            else:
+                await ctx.send('Could not find that account.')
         else:
-            await ctx.send('Could not find that account.')
+            await ctx.send('Only Helm can do manual transactions.')
     else:
-        await ctx.send('Only Helm can do manual transactions.')
+        await ctx.send(f"This command can only be used in {(client.get_channel(542384682818600971)).mention}.")
 
 
 
 @client.command()
-async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str):
+async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str, *, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            money = float(re.sub('\$|\,', '', money))
-            food = float(food.replace(',', ''))
-            coal = float(coal.replace(',', ''))
-            oil = float(oil.replace(',', ''))
-            uranium = float(uranium.replace(',', ''))
-            lead = float(lead.replace(',', ''))
-            iron = float(iron.replace(',', ''))
-            bauxite = float(bauxite.replace(',', ''))
-            gasoline = float(gasoline.replace(',', ''))
-            munitions = float(munitions.replace(',', ''))
-            steel = float(steel.replace(',', ''))
-            aluminum = float(aluminum.replace(',', ''))
-            old_bal = account["balance"]
-            new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
-            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-            await ctx.send('Balance updated.')
+    if ctx.channel == client.get_channel(542384682818600971):
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({'_id':nation_id})
+            if account:
+                money = float(re.sub('\$|\,', '', money))
+                food = float(food.replace(',', ''))
+                coal = float(coal.replace(',', ''))
+                oil = float(oil.replace(',', ''))
+                uranium = float(uranium.replace(',', ''))
+                lead = float(lead.replace(',', ''))
+                iron = float(iron.replace(',', ''))
+                bauxite = float(bauxite.replace(',', ''))
+                gasoline = float(gasoline.replace(',', ''))
+                munitions = float(munitions.replace(',', ''))
+                steel = float(steel.replace(',', ''))
+                aluminum = float(aluminum.replace(',', ''))
+                old_bal = account["balance"]
+                new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
+                db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
+                last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
+                last_tx_id = dict(last_tx[0])["_id"] + 1
+                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
+            else:
+                await ctx.send('Could not find that account.')
         else:
-            await ctx.send('Could not find that account.')
+            await ctx.send('Only Helm can do manual transactions.')
     else:
-        await ctx.send('Only Helm can do manual transactions.')
+        await ctx.send(f"This command can only be used in {(client.get_channel(542384682818600971)).mention}.")
+
 
 
 '''
