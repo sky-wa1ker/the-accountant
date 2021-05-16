@@ -358,7 +358,7 @@ async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str,
                 contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
                 last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
                 last_tx_id = dict(last_tx[0])["_id"] + 1
-                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
                 await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
             else:
                 await ctx.send('Could not find that account.')
@@ -394,7 +394,7 @@ async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:s
                 contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
                 last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
                 last_tx_id = dict(last_tx[0])["_id"] + 1
-                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
                 await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
             else:
                 await ctx.send('Could not find that account.')
