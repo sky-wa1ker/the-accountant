@@ -4,6 +4,7 @@ import aiohttp
 import asyncio
 import discord
 import pymongo
+import csv
 from datetime import datetime
 from discord.ext import commands, tasks
 from pymongo import MongoClient
@@ -28,6 +29,7 @@ async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
     transaction_scanner.start()
+    csvexport.start()
     print('Online as {0.user}'.format(client))
 
 
@@ -447,6 +449,20 @@ async def activityswitch(ctx, nation_id:int):
     else:
         await ctx.send('You are not Helm.')
 
+
+@tasks.loop(hours=3)
+async def csvexport():
+    channel = client.get_channel(312420656312614912)
+    acc = db.accounts.find({})
+    accounts = []
+    for x in acc:
+        accounts.append(x)
+    keys = keys = accounts[0].keys()
+    with open(f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv', 'w', newline='')  as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(accounts)
+        await channel.send(file=discord.File(f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv'))
 
 
 
