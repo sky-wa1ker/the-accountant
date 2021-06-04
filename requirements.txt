@@ -4,4 +4,3 @@ discord
 pymongo
 dnspython
 datetime
-csv
