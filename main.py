@@ -358,7 +358,7 @@ async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str,
                 new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
                 db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                 contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
-                last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
+                last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
                 last_tx_id = dict(last_tx[0])["_id"] + 1
                 db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
                 await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
@@ -394,7 +394,7 @@ async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:s
                 new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
                 db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                 contents = f"money: {money}, food: {food}, coal: {coal}, oil: {oil}, uranium: {uranium}, lead: {lead}, iron: {iron}, bauxite: {bauxite}, gasoline: {gasoline}, munitions: {munitions}, steel: {steel}, aluminum: {aluminum}"
-                last_tx = db.v_transactions.find().sort([('timestamp', -1)]).limit(1)
+                last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
                 last_tx_id = dict(last_tx[0])["_id"] + 1
                 db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
                 await ctx.reply(f'balance updated - virtual transaction ID is : {last_tx_id}')
