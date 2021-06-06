@@ -466,4 +466,84 @@ async def csvexport():
 
 
 
+@client.command()
+async def refresh(ctx):
+    role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
+    channel = client.get_channel(798609356715196424)
+    x = db.accounts.find_one({"discord_id":ctx.author.id})
+    if x:
+        async with aiohttp.ClientSession() as session:
+            if x["last_transaction_id"]:
+                url = f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}'
+            else:
+                url = f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}'
+            async with session.get(url) as r:
+                transactions = await r.json()
+                query = transactions['api_request']
+                if query['success']:
+                    for transaction in transactions['data']:
+                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913:
+                            if transaction['sender_id'] == 913:
+                                header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
+                                dcolor = 15158332
+                                tx_type = 'withdrawal'
+                            elif transaction['receiver_id'] == 913:
+                                header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
+                                dcolor = 3066993
+                                tx_type = 'deposit'
+                            else:
+                                header_message = 'Bruh, what kind of transaction is it?'
+                                dcolor = discord.Color.default()
+                                tx_type = 'unknown'
+                            transaction['transaction_type'] = tx_type
+                            transaction['processed'] = False
+                            db.transactions.insert_one(transaction)
+                            embed = discord.Embed(title=header_message, description=f'''
+    Transanction ID : **{transaction['tx_id']}**
+    Date and time : {transaction['tx_datetime']}
+    Note : {transaction['note']}
+    **Contents**:
+        Money : ${transaction['money']}
+        Coal : {transaction['coal']}
+        Oil : {transaction['oil']}
+        Uranium : {transaction['uranium']}
+        Iron : {transaction['iron']}
+        Bauxite : {transaction['bauxite']}
+        Lead : {transaction['lead']}
+        Gasoline : {transaction['gasoline']}
+        Munitions : {transaction['munitions']}
+        Steel : {transaction['steel']}
+        Aluminum : {transaction['aluminum']}
+        Food : {transaction['food']}''', color=dcolor)
+                            m = await channel.send(embed=embed)
+                            try:
+                                if transaction['transaction_type'] == 'deposit':
+                                    account = db.accounts.find_one({'_id':transaction["sender_id"]})
+                                    old_bal = account["balance"]
+                                    new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
+                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    await m.add_reaction('✅')
+                                elif transaction['transaction_type'] == 'withdrawal':
+                                    account = db.accounts.find_one({'_id':transaction["receiver_id"]})
+                                    old_bal = account["balance"]
+                                    new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
+                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    await m.add_reaction('✅')
+                            except:
+                                await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
+                                await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
+                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
+                await ctx.send("refreshed!")
+    else:
+        await ctx.send("You either don't have an account or your discord is not connecteed to your account yet.")
+
+
+
+
+
+
+
 client.run(token)
