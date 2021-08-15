@@ -267,6 +267,10 @@ async def balance(ctx, nation_id:int=None):
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 balance = account["balance"]
+                if account["account_type"] == 'active':
+                    color = discord.Colour.green()
+                elif account["account_type"] == 'inactive':
+                    color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {balance["food"]}
@@ -280,7 +284,8 @@ Gasoline : {balance["gasoline"]}
 Munitions : {balance["munitions"]}
 Steel : {balance["steel"]}
 Aluminum : {balance["aluminum"]}
-                ''')
+                ''',
+                color=color)
                 await ctx.author.send(embed=embed)
                 await ctx.message.add_reaction('📩')
             else:
@@ -293,6 +298,10 @@ Aluminum : {balance["aluminum"]}
             account = db.accounts.find_one({"discord_id":ctx.author.id})
             if account:
                 balance = account["balance"]
+                if account["account_type"] == 'active':
+                    color = discord.Colour.green()
+                elif account["account_type"] == 'inactive':
+                    color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {balance["food"]}
@@ -306,7 +315,8 @@ Gasoline : {balance["gasoline"]}
 Munitions : {balance["munitions"]}
 Steel : {balance["steel"]}
 Aluminum : {balance["aluminum"]}
-                ''')
+                ''',
+                color=color)
                 await ctx.author.send(embed=embed)
                 await ctx.message.add_reaction('📩')
             else:
