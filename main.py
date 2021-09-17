@@ -437,7 +437,7 @@ async def forceprocess(ctx, tx_id:int):
 
 
 
-@client.command(aliases=['switchactivity'])
+@client.command(aliases=['switchactivity', 'sa'])
 async def activityswitch(ctx, nation_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
