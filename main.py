@@ -481,7 +481,7 @@ async def refresh(ctx):
     role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
     channel = client.get_channel(798609356715196424)
     x = db.accounts.find_one({"discord_id":ctx.author.id})
-    if x:
+    if x and x['account_type']=='active':
         async with aiohttp.ClientSession() as session:
             if x["last_transaction_id"]:
                 url = f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}'
@@ -548,7 +548,7 @@ async def refresh(ctx):
                     db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                 await ctx.send("refreshed!")
     else:
-        await ctx.send("You either don't have an account or your discord is not connecteed to your account yet.")
+        await ctx.send("You either don't have an account, your discord is not connecteed to your account yet or your account is inactive, ask Admiralty for help.")
 
 
 
