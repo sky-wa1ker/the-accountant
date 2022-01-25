@@ -437,27 +437,48 @@ async def forceprocess(ctx, tx_id:int):
 
 
 
-@client.command(aliases=['switchactivity', 'sa'])
-async def activityswitch(ctx, nation_id:int):
+@client.command()
+async def active(ctx, nation_id:int):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
+    if role in ctx.author.roles: # 1
         account = db.accounts.find_one({'_id':nation_id})
         if account:
             if account["account_type"] == 'inactive':
-                db.accounts.update_one(account, {"$set": {"account_type": "active"}})
                 async with aiohttp.ClientSession() as session:
-                    async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={account["_id"]}') as r:
-                        transactions = await r.json()
-                        last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                        db.accounts.update_one(account, {"$set": {"last_transaction_id": last_transaction}})
-                await ctx.send("Account status changed from inactive to active.")
-            elif account["account_type"] == 'active':
+                    async with session.get(f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={nation_id}') as query:
+                        json_obj = await query.json()
+                        transanctions = json_obj['data']
+                        api_request = json_obj["api_request"]
+                        if api_request["success"]:
+                            last_transaction = (transanctions[-1]['tx_id'])
+                            db.accounts.update_one(account, {"$set": {"account_type": "active", "last_transaction_id": last_transaction}})
+                        else:
+                            last_transaction = None
+                            db.accounts.update_one(account, {"$set": {"last_transaction_id": last_transaction}})
+                        await ctx.send("Account status changed from inactive to active.")
+            else:
+                await ctx.send("Account is not inactive.")
+        else:
+            await ctx.send("Could not find this account.")
+    else:
+        await ctx.send("You are not Helm.")
+
+
+@client.command()
+async def inactive(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles: # 1
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["account_type"] == 'active':
                 db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
                 await ctx.send("Account status changed from active to inactive.")
+            else:
+                await ctx.send("Account is not active.")
         else:
-            await ctx.send('Could not find this account.')
+            await ctx.send("Could not find this account.")
     else:
-        await ctx.send('You are not Helm.')
+        await ctx.send("You are not Helm.")
 
 
 @tasks.loop(hours=3)
