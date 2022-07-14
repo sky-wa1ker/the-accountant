@@ -23,7 +23,6 @@ client.remove_command('help')
 
 
 
-
 @client.event
 async def on_ready():
     game = discord.Game("with pirate coins.")
