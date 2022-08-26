@@ -58,27 +58,7 @@ async def ping(ctx):
 async def help(ctx):
     role = discord.utils.get(ctx.guild.roles, name="Captain")
     if role in ctx.author.roles:
-        await ctx.send('''
-**The Accountant Commands:**
-
-**$adduser (nation_id)** : Create a new account for a nation, make sure you set the initial balance right. (use addbalance command)
-
-**$process (transaction_id)** : Process a transaction.
-
-**$balance** : By default shows your own balance, Helm can add a nation ID to see someone else's balance.
-
-**$adddiscord (nation_id) (user.mention)** : Add a discord to an account, necessary before you use balance command.
-
-**$addbalance (nation_id) (contents)** : To process 3rd party transactions/add initial amount when opening an account or to correct errors, contents **MUST** be copied directly from in-game transaction or Arrgh banking sheet, DO NOT ever copy from anywhere else or try to write them down manually.
-
-**$deductbalance (nation_id) (contents)** : Self explanatory at this point I believe.
-
-**$forceprocess (transaction_id)** : To process a transaction without actually processing it, should be used in 3rd party transaction. Doesn't change the account balance but marks the transaction processed. It is important to mark every transaction processed that appears in #transactions-feed.
-
-**$activityswitch (nation_id)** : When people leave but don't take their stuff with them, mark them inactive with this command, use again to mark them active.
-
-**$missedtxs** : Use this command to ensure you have not missed any transations.
-        ''')
+        await ctx.send("help command has been removed because I am too lazy to update it as I make changes, ask me (sam cooper) directly.")
     else:
         await ctx.send('I don\'t serve landlubbers.')
 
@@ -452,12 +432,11 @@ async def active(ctx, nation_id:int):
                         if api_request["success"]:
                             last_transaction = (transanctions[-1]['tx_id'])
                             db.accounts.update_one(account, {"$set": {"account_type": "active", "last_transaction_id": last_transaction}})
+                            await ctx.send("Account status changed from inactive to active.")
                         else:
-                            last_transaction = None
-                            db.accounts.update_one(account, {"$set": {"last_transaction_id": last_transaction}})
-                        await ctx.send("Account status changed from inactive to active.")
+                            await ctx.send("epic api fail, help! <@343397899369054219>")
             else:
-                await ctx.send("Account is not inactive.")
+                await ctx.send("Account is already active.")
         else:
             await ctx.send("Could not find this account.")
     else:
@@ -474,7 +453,7 @@ async def inactive(ctx, nation_id:int):
                 db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
                 await ctx.send("Account status changed from active to inactive.")
             else:
-                await ctx.send("Account is not active.")
+                await ctx.send("Account is already inactive.")
         else:
             await ctx.send("Could not find this account.")
     else:
