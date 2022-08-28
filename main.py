@@ -20,7 +20,6 @@ db = db_client.get_database('the_accountant_db')
 
 intents = discord.Intents.default()
 intents.members = True
-intents.all = True
 
 client = commands.Bot(command_prefix = '$', intents = intents)
 client.remove_command('help')
