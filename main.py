@@ -18,7 +18,7 @@ db_client = MongoClient(os.environ["db_access_url"])
 db = db_client.get_database('the_accountant_db')
 
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.members = True
 
 client = commands.Bot(command_prefix = '$', intents = intents)
