@@ -18,7 +18,11 @@ db_client = MongoClient(os.environ["db_access_url"])
 db = db_client.get_database('the_accountant_db')
 
 
-client = commands.Bot(command_prefix = '$')
+intents = discord.Intents.default()
+intents.members = True
+intents.all = True
+
+client = commands.Bot(command_prefix = '$', intents = intents)
 client.remove_command('help')
 
 
@@ -353,7 +357,7 @@ async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str,
                 await ctx.reply(f'''
 Added ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
 to ``account: {nation_id}``
-Virtual transaction ID is : {last_tx_id}
+Virtual transaction ID is : ``{last_tx_id}``
     ''')
             else:
                 await ctx.send('Could not find that account.')
@@ -393,7 +397,7 @@ async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:s
                 await ctx.reply(f'''
 Deducted ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
 from ``account: {nation_id}``
-Virtual transaction ID is : {last_tx_id}
+Virtual transaction ID is : ``{last_tx_id}``
     ''')  
             else:
                 await ctx.send('Could not find that account.')
