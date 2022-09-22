@@ -503,7 +503,7 @@ async def refresh(ctx):
                 query = transactions['api_request']
                 if query['success']:
                     for transaction in transactions['data']:
-                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913 and db.transactions.find({"tx_id":transaction["tx_id"]}) is False:
+                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913:
                             if transaction['sender_id'] == 913:
                                 header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
                                 dcolor = 15158332
@@ -545,6 +545,8 @@ async def refresh(ctx):
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                                     transaction['processed'] = True
                                     await m.add_reaction('✅')
+                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                                 elif transaction['transaction_type'] == 'withdrawal':
                                     account = db.accounts.find_one({'_id':transaction["receiver_id"]})
                                     old_bal = account["balance"]
@@ -552,12 +554,12 @@ async def refresh(ctx):
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                                     transaction['processed'] = True
                                     await m.add_reaction('✅')
+                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                                 db.transactions.insert_one(transaction)
                             except:
                                 await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
                                 await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
-                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                 await ctx.send("refreshed!")
     else:
         await ctx.send("You either don't have an account, your discord is not connecteed to your account yet or your account is inactive, ask Admiralty for help.")
