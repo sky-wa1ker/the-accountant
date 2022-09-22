@@ -143,6 +143,7 @@ async def transaction_scanner():
                                 tx_type = 'unknown'
                             transaction['transaction_type'] = tx_type
                             transaction['processed'] = False
+                            transaction['pushed_to_db'] = str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')})
                             db.transactions.insert_one(transaction)
                             embed = discord.Embed(title=header_message, description=f'''
     Transanction ID : **{transaction['tx_id']}**
@@ -502,7 +503,7 @@ async def refresh(ctx):
                 query = transactions['api_request']
                 if query['success']:
                     for transaction in transactions['data']:
-                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913:
+                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913 and db.transactions.find({"tx_id":transaction["tx_id"]}) is False:
                             if transaction['sender_id'] == 913:
                                 header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
                                 dcolor = 15158332
@@ -517,7 +518,7 @@ async def refresh(ctx):
                                 tx_type = 'unknown'
                             transaction['transaction_type'] = tx_type
                             transaction['processed'] = False
-                            db.transactions.insert_one(transaction)
+                            transaction['pushed_to_db'] = str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')})
                             embed = discord.Embed(title=header_message, description=f'''
     Transanction ID : **{transaction['tx_id']}**
     Date and time : {transaction['tx_datetime']}
@@ -542,15 +543,16 @@ async def refresh(ctx):
                                     old_bal = account["balance"]
                                     new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    transaction['processed'] = True
                                     await m.add_reaction('✅')
                                 elif transaction['transaction_type'] == 'withdrawal':
                                     account = db.accounts.find_one({'_id':transaction["receiver_id"]})
                                     old_bal = account["balance"]
                                     new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    transaction['processed'] = True
                                     await m.add_reaction('✅')
+                                db.transactions.insert_one(transaction)
                             except:
                                 await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
                                 await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
@@ -559,9 +561,7 @@ async def refresh(ctx):
                 await ctx.send("refreshed!")
     else:
         await ctx.send("You either don't have an account, your discord is not connecteed to your account yet or your account is inactive, ask Admiralty for help.")
-
-
-
+        
 
 
 
