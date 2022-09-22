@@ -144,7 +144,6 @@ async def transaction_scanner():
                             transaction['transaction_type'] = tx_type
                             transaction['processed'] = False
                             transaction['pushed_to_db'] = str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')})
-                            db.transactions.insert_one(transaction)
                             embed = discord.Embed(title=header_message, description=f'''
     Transanction ID : **{transaction['tx_id']}**
     Date and time : {transaction['tx_datetime']}
@@ -170,20 +169,23 @@ async def transaction_scanner():
                                     old_bal = account["balance"]
                                     new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    transaction['processed'] = True
                                     await m.add_reaction('✅')
+                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                                 elif transaction['transaction_type'] == 'withdrawal':
                                     account = db.accounts.find_one({'_id':transaction["receiver_id"]})
                                     old_bal = account["balance"]
                                     new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
                                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    db.transactions.update_one(transaction, {"$set": {'processed':True}})
+                                    transaction['processed'] = True
                                     await m.add_reaction('✅')
+                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
+                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
+                                db.transactions.insert_one(transaction)
                             except:
                                 await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
                                 await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
-                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                     await asyncio.sleep(2)
                     
     
