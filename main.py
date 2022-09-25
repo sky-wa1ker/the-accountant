@@ -278,8 +278,9 @@ Aluminum : {balance["aluminum"]}
         else:
             await ctx.send('Only Helm is allowed to see balance with nation_id.')
     else:
-        role = discord.utils.get(ctx.guild.roles, name="Captain")
-        if role in ctx.author.roles:
+        cap_role = discord.utils.get(ctx.guild.roles, name="Captain")
+        retir_role = discord.utils.get(ctx.guild.roles, name="Retired")
+        if cap_role in ctx.author.roles or retir_role in ctx.author.roles:
             account = db.accounts.find_one({"discord_id":ctx.author.id})
             if account:
                 balance = account["balance"]
