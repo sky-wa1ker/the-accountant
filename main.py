@@ -33,11 +33,9 @@ async def on_ready():
 
 @client.slash_command()
 async def hello(ctx):
-    await ctx.respond("Hello!")
+    await ctx.respond("Hello!", ephemeral=True)
 
-@client.command()
-async def hi(ctx):
-  await ctx.send("test yes")
+
 
 
 
