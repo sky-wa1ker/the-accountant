@@ -24,7 +24,10 @@ client = discord.Bot(intents = intents)
 async def on_ready():
     game = discord.Game("with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
-    #csvexport.start()
+    '''if not csvexport.is_running():
+        csvexport.start()'''
+    if not transaction_scanner.is_running():
+        transaction_scanner.start()
     print('Online as {0.user}'.format(client))
 
 
@@ -360,99 +363,130 @@ async def audit_clear(ctx, nation_id:int):
 
 
 
-@tasks.loop(minutes=3)
+@tasks.loop(minutes=2)
 async def transaction_scanner():
     role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
-    channel = client.get_channel(798609356715196424)
-    members = db.accounts.find({'account_type':'active'})
-    for x in members:
-        async with aiohttp.ClientSession() as session:
-            if x["last_transaction_id"]:
-                url = f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}&min_tx_id={x["last_transaction_id"]}'
-            else:
-                url = f'https://politicsandwar.com/api/v2/nation-bank-recs/{api_key}/&nation_id={x["_id"]}'
-            async with session.get(url) as r:
-                transactions = await r.json()
-                query = transactions['api_request']
-                if query['success']:
-                    for transaction in transactions['data']:
-                        if transaction['sender_id'] == 913 or transaction['receiver_id'] == 913:
-                            if transaction['sender_id'] == 913:
-                                header_message = f'{x["nation_name"]} made a withdrawal from Arrgh bank.'
-                                dcolor = 15158332
-                                tx_type = 'withdrawal'
-                            elif transaction['receiver_id'] == 913:
-                                header_message = f'{x["nation_name"]} made a deposit into Arrgh bank.'
-                                dcolor = 3066993
-                                tx_type = 'deposit'
-                            else:
-                                header_message = 'Bruh, what kind of transaction is it?'
-                                dcolor = discord.Color.default()
-                                tx_type = 'unknown'
-                            transaction['transaction_type'] = tx_type
-                            transaction['processed'] = False
-                            transaction['pushed_to_db'] = str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')})
-                            embed = discord.Embed(title=header_message, description=f'''
-    Transanction ID : **{transaction['tx_id']}**
-    Date and time : {transaction['tx_datetime']}
-    Note : {transaction['note']}
-    **Contents**:
-        Money : ${transaction['money']}
-        Coal : {transaction['coal']}
-        Oil : {transaction['oil']}
-        Uranium : {transaction['uranium']}
-        Iron : {transaction['iron']}
-        Bauxite : {transaction['bauxite']}
-        Lead : {transaction['lead']}
-        Gasoline : {transaction['gasoline']}
-        Munitions : {transaction['munitions']}
-        Steel : {transaction['steel']}
-        Aluminum : {transaction['aluminum']}
-        Food : {transaction['food']}''', color=dcolor)
-                            m = await channel.send(embed=embed)
-                            try:
-                                if transaction['transaction_type'] == 'deposit':
-                                    account = db.accounts.find_one({'_id':transaction["sender_id"]})
-                                    old_bal = account["balance"]
-                                    new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
-                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    transaction['processed'] = True
-                                    await m.add_reaction('✅')
-                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
-                                elif transaction['transaction_type'] == 'withdrawal':
-                                    account = db.accounts.find_one({'_id':transaction["receiver_id"]})
-                                    old_bal = account["balance"]
-                                    new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
-                                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                                    transaction['processed'] = True
-                                    await m.add_reaction('✅')
-                                    last_transaction = (transactions['data'][-1]['tx_id']) + 1
-                                    db.accounts.update_one({'_id':x["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
-                                db.transactions.insert_one(transaction)
-                            except:
-                                await channel.send(f"Could not precess this one. {role.mention} | <@343397899369054219>")
-                                await channel.send(f'UTC timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n https://dashboard.heroku.com/apps/the-arrgh-ccountant/logs')
-                    await asyncio.sleep(2)
-
-
-
-
-'''
-@tasks.loop()
-async def transaction_scanner():
-    role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
-    channel = client.get_channel(798609356715196424)
-    min_tax_id = "add this bit in query and remove first"
+    channel = client.get_channel(798609356715196424) 
+    opsec_channel = client.get_channel(1031144610417868874)
+    accounts_cursor = db.accounts.find({"account_type":"active"},{"_id":1})
+    account_ids = []
+    for x in accounts_cursor:
+        account_ids.append(x["_id"])
+    misc = db.misc.find_one({'_id':True})
+    last_tx_id = misc['last_arrgh_tx']
     async with aiohttp.ClientSession() as session:
-        async with session.post(graphql, json={'query':f"{{bankrecs(or_id:913, first:50){{data{{id date sender_id sender_type receiver_id receiver_type banker_id note money coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}}}}"}) as query:
-            json_obj = query.json()
+        async with session.post(graphql, json={'query':f"{{bankrecs(or_id:913, min_id:{last_tx_id}, orderBy:{{column:ID, order:DESC}}){{data{{id date sender_id sender_type sender{{nation_name leader_name}}receiver_id receiver_type receiver{{nation_name leader_name}}banker_id banker{{nation_name leader_name}}note money coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}}}}"}) as query:
+            json_obj = await query.json()
             transactions = json_obj["data"]["bankrecs"]["data"]
             for transaction in transactions:
-                if '''
-                    
+                if int(transaction["sender_id"]) in account_ids:
+                    header_message = f'{transaction["sender"]["leader_name"]} of {transaction["sender"]["nation_name"]} made a deposit into Arrgh bank.'
+                    dcolor = 3066993
+                    tx_type = 'deposit'
+                elif int(transaction["receiver_id"]) in account_ids:
+                    header_message = f'{transaction["receiver"]["leader_name"]} of {transaction["receiver"]["nation_name"]} made a withdrawal from Arrgh bank.'
+                    dcolor = 15158332
+                    tx_type = 'withdrawal'
+                elif (transaction["receiver_type"] == 1 and int(transaction["receiver_id"]) not in account_ids) and ((transaction["note"]).endswith("the alliance bank inventory.") == False):
+                    header_message = f'{transaction["banker"]["leader_name"]} processed a third party withdrawal for {transaction["receiver"]["nation_name"]}.'
+                    dcolor = 15158332
+                    tx_type = 'tp_withdrawal'
+                elif (transaction["receiver_type"] == 1 and int(transaction["receiver_id"]) not in account_ids) and ((transaction["note"]).endswith("the alliance bank inventory.")):
+                    header_message = f'{transaction["banker"]["leader_name"]} lost a war to {transaction["receiver"]["nation_name"]}.'
+                    dcolor = 15158332
+                    tx_type = 'bank_loot'
+                else:
+                    tx_type = 'unknown'
+                db_transaction = {
+                    'tx_id':int(transaction['id']),
+                    'tx_datetime':transaction['date'],
+                    'sender_id':int(transaction['sender_id']),
+                    'sender_type':transaction['sender_type'],
+                    'receiver_id':int(transaction['receiver_id']),
+                    'receiver_type':transaction['receiver_type'],
+                    'banker_nation_id':int(transaction['banker_id']),
+                    'note':transaction['note'],
+                    'money':transaction['money'],
+                    'coal':transaction['coal'],
+                    'oil':transaction['oil'],
+                    'uranium':transaction['uranium'],
+                    'iron':transaction['iron'],
+                    'bauxite':transaction['bauxite'],
+                    'lead':transaction['lead'],
+                    'gasoline':transaction['gasoline'],
+                    'munitions':transaction['munitions'],
+                    'steel':transaction['steel'],
+                    'aluminum':transaction['aluminum'],
+                    'food':transaction['food'],
+                    'transaction_type':tx_type,
+                    'processed':False,
+                    'pushed_to_db':str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')})
+                }
 
+                embed = discord.Embed(title=header_message, description=f'''
+Transanction ID : **{transaction['id']}**
+Date and time : {transaction['date']}
+Note : {transaction['note']}
+**Contents**:
+Money : ${transaction['money']}
+Coal : {transaction['coal']}
+Oil : {transaction['oil']}
+Uranium : {transaction['uranium']}
+Iron : {transaction['iron']}
+Bauxite : {transaction['bauxite']}
+Lead : {transaction['lead']}
+Gasoline : {transaction['gasoline']}
+Munitions : {transaction['munitions']}
+Steel : {transaction['steel']}
+Aluminum : {transaction['aluminum']}
+Food : {transaction['food']}''', color=dcolor)
 
+                try:
+                    if db.transactions.find_one({'tx_id':int(transaction['id'])}) is None:
+                        if db_transaction['transaction_type'] == 'deposit':
+                            m = await channel.send(embed=embed)
+                            account = db.accounts.find_one({'_id':int(transaction["sender_id"])})
+                            old_bal = account["balance"]
+                            new_bal = {"money":(old_bal["money"] + transaction["money"]),"coal":(old_bal["coal"] + transaction["coal"]),"oil":(old_bal["oil"] + transaction["oil"]),"uranium":(old_bal["uranium"] + transaction["uranium"]),"iron":(old_bal["iron"] + transaction["iron"]),"bauxite":(old_bal["bauxite"] + transaction["bauxite"]),"lead":(old_bal["lead"] + transaction["lead"]),"gasoline":(old_bal["gasoline"] + transaction["gasoline"]),"munitions":(old_bal["munitions"] + transaction["munitions"]),"steel":(old_bal["steel"] + transaction["steel"]),"aluminum":(old_bal["aluminum"] + transaction["aluminum"]),"food":(old_bal["food"] + transaction["food"])}
+                            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                            db_transaction['processed'] = True
+                            await m.add_reaction('✅')
+                            last_transaction = int(transactions[0]['id'])
+                            db.accounts.update_one(account, {"$set": {'last_transaction_id':last_transaction}})
+                            db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                            db.transactions.insert_one(db_transaction)
+
+                        elif db_transaction['transaction_type'] == 'withdrawal':
+                            m = await channel.send(embed=embed)
+                            account = db.accounts.find_one({'_id':int(transaction["receiver_id"])})
+                            old_bal = account["balance"]
+                            new_bal = {"money":(old_bal["money"] - transaction["money"]),"coal":(old_bal["coal"] - transaction["coal"]),"oil":(old_bal["oil"] - transaction["oil"]),"uranium":(old_bal["uranium"] - transaction["uranium"]),"iron":(old_bal["iron"] - transaction["iron"]),"bauxite":(old_bal["bauxite"] - transaction["bauxite"]),"lead":(old_bal["lead"] - transaction["lead"]),"gasoline":(old_bal["gasoline"] - transaction["gasoline"]),"munitions":(old_bal["munitions"] - transaction["munitions"]),"steel":(old_bal["steel"] - transaction["steel"]),"aluminum":(old_bal["aluminum"] - transaction["aluminum"]),"food":(old_bal["food"] - transaction["food"])}
+                            db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                            db_transaction['processed'] = True
+                            await m.add_reaction('✅')
+                            last_transaction = int(transactions[0]['id'])
+                            db.accounts.update_one(account, {"$set": {'last_transaction_id':last_transaction}})
+                            db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                            db.transactions.insert_one(db_transaction)
+
+                        elif db_transaction['transaction_type'] == 'tp_withdrawal':
+                            await opsec_channel.send(f"{role.mention}")
+                            await opsec_channel.send(embed=embed)
+                            db.tp_transactions.insert_one(db_transaction)
+                            last_transaction = int(transactions[0]['id'])
+                            db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                            
+                        elif db_transaction['transaction_type'] == 'bank_loot':
+                            await opsec_channel.send(embed=embed)
+                            db.testing.insert_one(db_transaction)
+                            await opsec_channel.send(embed=embed)
+                            last_transaction = int(transactions[0]['id'])
+                            db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+
+                        elif db_transaction['transaction_type'] == 'unknown':
+                            await opsec_channel.send(f'{role.mention} unknown type tx_id: {transaction["id"]}')
+                except:
+                    await channel.send(f'{role.mention} could not process tx_id: {transaction["id"]}')
 
 
 
