@@ -480,7 +480,6 @@ Food : {transaction['food']}''', color=dcolor)
                         
                     elif db_transaction['transaction_type'] == 'bank_loot':
                         await opsec_channel.send(embed=embed)
-                        await opsec_channel.send(embed=embed)
                         last_transaction = int(transactions[0]['id']) + 1
                         db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
 
