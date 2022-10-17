@@ -442,8 +442,8 @@ Aluminum : {transaction['aluminum']}
 Food : {transaction['food']}''', color=dcolor)
 
                 try:
-                    if db.transactions.find_one({'tx_id':int(transaction['id'])}) is None:
-                        if db_transaction['transaction_type'] == 'deposit':
+                    if db_transaction['transaction_type'] == 'deposit':
+                        if db.transactions.find_one({'tx_id':int(transaction['id'])}) is None:
                             m = await channel.send(embed=embed)
                             account = db.accounts.find_one({'_id':int(transaction["sender_id"])})
                             old_bal = account["balance"]
@@ -451,12 +451,13 @@ Food : {transaction['food']}''', color=dcolor)
                             db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                             db_transaction['processed'] = True
                             await m.add_reaction('✅')
-                            last_transaction = int(transactions[0]['id'])
-                            db.accounts.update_one(account, {"$set": {'last_transaction_id':last_transaction}})
+                            last_transaction = int(transactions[0]['id']) + 1
+                            db.accounts.update_one({'_id':account["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                             db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
                             db.transactions.insert_one(db_transaction)
 
-                        elif db_transaction['transaction_type'] == 'withdrawal':
+                    elif db_transaction['transaction_type'] == 'withdrawal':
+                        if db.transactions.find_one({'tx_id':int(transaction['id'])}) is None:
                             m = await channel.send(embed=embed)
                             account = db.accounts.find_one({'_id':int(transaction["receiver_id"])})
                             old_bal = account["balance"]
@@ -464,27 +465,27 @@ Food : {transaction['food']}''', color=dcolor)
                             db.accounts.update_one(account, {"$set": {'balance':new_bal}})
                             db_transaction['processed'] = True
                             await m.add_reaction('✅')
-                            last_transaction = int(transactions[0]['id'])
-                            db.accounts.update_one(account, {"$set": {'last_transaction_id':last_transaction}})
+                            last_transaction = int(transactions[0]['id']) + 1
+                            db.accounts.update_one({'_id':account["_id"]}, {"$set": {'last_transaction_id':last_transaction}})
                             db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
                             db.transactions.insert_one(db_transaction)
 
-                        elif db_transaction['transaction_type'] == 'tp_withdrawal':
+                    elif db_transaction['transaction_type'] == 'tp_withdrawal':
+                        if db.tp_transactions.find_one({'tx_id':int(transaction['id'])}) is None:
                             await opsec_channel.send(f"{role.mention}")
                             await opsec_channel.send(embed=embed)
                             db.tp_transactions.insert_one(db_transaction)
-                            last_transaction = int(transactions[0]['id'])
+                            last_transaction = int(transactions[0]['id']) + 1
                             db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
-                            
-                        elif db_transaction['transaction_type'] == 'bank_loot':
-                            await opsec_channel.send(embed=embed)
-                            db.testing.insert_one(db_transaction)
-                            await opsec_channel.send(embed=embed)
-                            last_transaction = int(transactions[0]['id'])
-                            db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                        
+                    elif db_transaction['transaction_type'] == 'bank_loot':
+                        await opsec_channel.send(embed=embed)
+                        await opsec_channel.send(embed=embed)
+                        last_transaction = int(transactions[0]['id']) + 1
+                        db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
 
-                        elif db_transaction['transaction_type'] == 'unknown':
-                            await opsec_channel.send(f'{role.mention} unknown type tx_id: {transaction["id"]}')
+                    elif db_transaction['transaction_type'] == 'unknown':
+                        await opsec_channel.send(f'{role.mention} unknown type tx_id: {transaction["id"]}')
                 except:
                     await channel.send(f'{role.mention} could not process tx_id: {transaction["id"]}')
 
