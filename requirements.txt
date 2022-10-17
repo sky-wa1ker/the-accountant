@@ -1,6 +1,6 @@
 aiohttp
 asyncio
-discord
 pymongo
 dnspython
 datetime
+py-cord
