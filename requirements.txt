@@ -4,3 +4,4 @@ pymongo
 dnspython
 datetime
 py-cord
+discord
