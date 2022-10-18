@@ -378,7 +378,7 @@ async def transaction_scanner():
         async with session.post(graphql, json={'query':f"{{bankrecs(or_id:913, min_id:{last_tx_id}, orderBy:{{column:ID, order:DESC}}){{data{{id date sender_id sender_type sender{{nation_name leader_name}}receiver_id receiver_type receiver{{nation_name leader_name}}banker_id banker{{nation_name leader_name}}note money coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}}}}"}) as query:
             json_obj = await query.json()
             transactions = json_obj["data"]["bankrecs"]["data"]
-            if len(transaction) > 0:
+            if len(transactions) > 0:
                 for transaction in transactions:
                     if int(transaction["sender_id"]) in account_ids:
                         header_message = f'{transaction["sender"]["leader_name"]} of {transaction["sender"]["nation_name"]} made a deposit into Arrgh bank.'
