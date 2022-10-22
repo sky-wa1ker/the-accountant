@@ -373,11 +373,12 @@ async def transaction_scanner():
     for x in accounts_cursor:
         account_ids.append(x["_id"])
     misc = db.misc.find_one({'_id':True})
+    yarr_ids = misc['yarr_ids']
     last_tx_id = misc['last_arrgh_tx']
     async with aiohttp.ClientSession() as session:
-        async with session.post(graphql, json={'query':f"{{bankrecs(or_id:913, min_id:{last_tx_id}, orderBy:{{column:ID, order:DESC}}){{data{{id date sender_id sender_type sender{{nation_name leader_name}}receiver_id receiver_type receiver{{nation_name leader_name}}banker_id banker{{nation_name leader_name}}note money coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}}}}"}) as query:
+        async with session.post(graphql, json={'query':f"{{alliances(id:913){{data{{bankrecs(min_id:{last_tx_id}, orderBy:{{column:ID, order:DESC}}){{id date sender_id sender_type sender{{leader_name nation_name}}receiver_id receiver_type receiver{{leader_name nation_name}}banker_id banker{{leader_name nation_name}} note money coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}}}}}}"}) as query:
             json_obj = await query.json()
-            transactions = json_obj["data"]["bankrecs"]["data"]
+            transactions = json_obj["data"]["alliances"]["data"][0]["bankrecs"]
             if len(transactions) > 0:
                 for transaction in transactions:
                     if int(transaction["sender_id"]) in account_ids:
@@ -396,6 +397,14 @@ async def transaction_scanner():
                         header_message = f'{transaction["banker"]["leader_name"]} lost a war to {transaction["receiver"]["nation_name"]}.'
                         dcolor = 15158332
                         tx_type = 'bank_loot'
+                    elif (transaction["receiver_type"] == 2 and transaction["sender_type"] == 2) and (transaction["sender_id"] == '913'):
+                        header_message = f'{transaction["banker"]["leader_name"]} sent following resources to an alliance from Arrgh bank.'
+                        dcolor = 15158332
+                        tx_type = 'aa_withdrawal'
+                    elif (transaction["receiver_type"] == 2 and transaction["sender_type"] == 2) and (transaction["receiver_id"] == '913'):
+                        header_message = f'{transaction["banker"]["leader_name"]} sent following resources from their alliance to Arrgh bank.'
+                        dcolor = 3066993
+                        tx_type = 'aa_deposit'
                     else:
                         tx_type = 'unknown'
                     db_transaction = {
@@ -483,6 +492,28 @@ async def transaction_scanner():
                             await opsec_channel.send(embed=embed)
                             last_transaction = int(transactions[0]['id']) + 1
                             db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+
+                        elif db_transaction['transaction_type'] == 'aa_withdrawal':
+                            if db.tp_transactions.find_one({'tx_id':int(transaction['id'])}) is None:
+                                await opsec_channel.send(embed=embed)
+                                db.tp_transactions.insert_one(db_transaction)
+                                last_transaction = int(transactions[0]['id']) + 1
+                                db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                                if int(transaction["receiver_id"]) in yarr_ids:
+                                    await opsec_channel.send("note: looks like Yarr safekeep.")
+                                else:
+                                    await opsec_channel.send(f"{role.mention}")
+
+                        elif db_transaction['transaction_type'] == 'aa_deposit':
+                            if db.tp_transactions.find_one({'tx_id':int(transaction['id'])}) is None:
+                                await opsec_channel.send(embed=embed)
+                                db.tp_transactions.insert_one(db_transaction)
+                                last_transaction = int(transactions[0]['id']) + 1
+                                db.misc.update_one({'_id':True}, {"$set": {'last_arrgh_tx':last_transaction}})
+                                if int(transaction["sender_id"]) in yarr_ids:
+                                    await opsec_channel.send("note: looks like Yarr withdrawal.")
+                                else:
+                                    await opsec_channel.send(f"{role.mention}")
 
                         elif db_transaction['transaction_type'] == 'unknown':
                             await opsec_channel.send(f'{role.mention} unknown type tx_id: {transaction["id"]}')
