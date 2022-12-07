@@ -381,6 +381,7 @@ async def transaction_scanner():
             transactions = json_obj["data"]["alliances"]["data"][0]["bankrecs"]
             if len(transactions) > 0:
                 for transaction in transactions:
+                    asyncio.sleep(1)
                     if int(transaction["sender_id"]) in account_ids:
                         header_message = f'{transaction["sender"]["leader_name"]} of {transaction["sender"]["nation_name"]} made a deposit into Arrgh bank.'
                         dcolor = 3066993
