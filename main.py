@@ -28,9 +28,9 @@ async def on_ready():
         csvexport.start()
     if not transaction_scanner.is_running():
         transaction_scanner.start()
+    if not name_update.is_running():
+        name_update.start()
     print('Online as {0.user}'.format(client))
-
-
 
 
 
@@ -325,6 +325,24 @@ async def csvexport():
     for file in filtered_files:
         path_to_file = os.path.join(directory, file)
         os.remove(path_to_file)
+
+
+
+@tasks.loop(minutes=180)
+async def name_update():
+    accounts_cursor = db.accounts.find()
+    accounts = []
+    for x in accounts_cursor:
+        accounts.append(str(x['_id']))
+    async with aiohttp.ClientSession() as session:
+        async with session.post(graphql, json={'query':f"{{nations(first: 500, id:{accounts}){{data{{id nation_name}}}}}}"}) as r:
+            json_obj = r.json()
+            nations = json_obj["data"]["nations"]["data"]
+            for nation in nations:
+                if nation["id"] in accounts:
+                    db.accounts.update_one({'_id':int(nation["_id"])}, {"$set": {'nation_name':nation["nation_name"]}})
+
+
 
 
 @client.slash_command(description="Mark an account as due for audit.")
