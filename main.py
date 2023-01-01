@@ -36,7 +36,7 @@ async def on_ready():
 
 
 @client.slash_command(description="Check your balance in Arrgh bank. Helm can check anyone else's balance by entering their nation_id.")
-async def balance(ctx, nation_id:int=None):
+async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None):
     if nation_id:
         role = discord.utils.get(ctx.guild.roles, name="Helm")
         if role in ctx.author.roles:
@@ -49,20 +49,22 @@ async def balance(ctx, nation_id:int=None):
                     color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
-Food : {balance["food"]}
-Coal : {balance["coal"]}
-Oil : {balance["oil"]}
-Uranium : {balance["uranium"]}
-Lead : {balance["lead"]}
-Iron : {balance["iron"]}
-Bauxite : {balance["bauxite"]}
-Gasoline : {balance["gasoline"]}
-Munitions : {balance["munitions"]}
-Steel : {balance["steel"]}
-Aluminum : {balance["aluminum"]}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
                 ''',
                 color=color)
                 await ctx.respond(embed=embed, ephemeral=True)
+                if copy_in_dm:
+                    await ctx.author.send(embed=embed)
             else:
                 await ctx.respond('I could not find this nation.', ephemeral=True)
         else:
@@ -80,20 +82,22 @@ Aluminum : {balance["aluminum"]}
                     color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
-Food : {balance["food"]}
-Coal : {balance["coal"]}
-Oil : {balance["oil"]}
-Uranium : {balance["uranium"]}
-Lead : {balance["lead"]}
-Iron : {balance["iron"]}
-Bauxite : {balance["bauxite"]}
-Gasoline : {balance["gasoline"]}
-Munitions : {balance["munitions"]}
-Steel : {balance["steel"]}
-Aluminum : {balance["aluminum"]}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
                 ''',
                 color=color)
                 await ctx.respond(embed=embed, ephemeral=True)
+                if copy_in_dm:
+                    await ctx.author.send(embed=embed)
             else:
                 await ctx.respond('You either do not have an account or your discord is not connected to your account yet.')
         else:
