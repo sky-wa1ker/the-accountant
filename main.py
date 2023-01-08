@@ -35,11 +35,11 @@ async def on_ready():
 
 
 
-@client.slash_command(description="Check your balance in Arrgh bank. Helm can check anyone else's balance by entering their nation_id.")
-async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None):
+@client.slash_command(description="Check your balance in Arrgh bank. Helm can check someone's balance by entering a nation_id or user.")
+async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None, user:discord.User=None):
     if nation_id:
-        role = discord.utils.get(ctx.guild.roles, name="Helm")
-        if role in ctx.author.roles:
+        helm = discord.utils.get(ctx.guild.roles, name="Helm")
+        if helm in ctx.author.roles:
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 balance = account["balance"]
@@ -73,7 +73,11 @@ Aluminum : {"{:,.2f}".format(balance["aluminum"])}
         cap_role = discord.utils.get(ctx.guild.roles, name="Captain")
         retir_role = discord.utils.get(ctx.guild.roles, name="Retired")
         if cap_role in ctx.author.roles or retir_role in ctx.author.roles:
-            account = db.accounts.find_one({"discord_id":ctx.author.id})
+            if user and helm in ctx.author.roles:
+                pass
+            else:
+                user = ctx.author
+            account = db.accounts.find_one({"discord_id":user.id})
             if account:
                 balance = account["balance"]
                 if account["account_type"] == 'active':
@@ -99,9 +103,86 @@ Aluminum : {"{:,.2f}".format(balance["aluminum"])}
                 if copy_in_dm:
                     await ctx.author.send(embed=embed)
             else:
-                await ctx.respond('You either do not have an account or your discord is not connected to your account yet.')
+                await ctx.respond('This user either does not have an account or their discord is not connected to their account yet.')
         else:
             await ctx.respond('I don\'t serve landlubbers.')
+
+
+
+
+
+@client.slash_command(description="Request a withdrawal from arrgh bank.")
+async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0', note:str='withdrawal'):
+    role = discord.utils.get(ctx.guild.roles, name="Captain")
+    channel = client.get_channel(400427307334107158)
+    if role in ctx.author.roles:
+        if ctx.channel == channel:
+            account = db.accounts.find_one({"discord_id":ctx.author.id})
+            if account:
+                try:
+                    money = float(re.sub('\$|\,', '', money))
+                    food = float(food.replace(',', ''))
+                    coal = float(coal.replace(',', ''))
+                    oil = float(oil.replace(',', ''))
+                    uranium = float(uranium.replace(',', ''))
+                    lead = float(lead.replace(',', ''))
+                    iron = float(iron.replace(',', ''))
+                    bauxite = float(bauxite.replace(',', ''))
+                    gasoline = float(gasoline.replace(',', ''))
+                    munitions = float(munitions.replace(',', ''))
+                    steel = float(steel.replace(',', ''))
+                    aluminum = float(aluminum.replace(',', ''))
+                    bal = account["balance"]
+                    bal_check = [
+                        bal["money"] >= money,
+                        bal["food"] >= food,
+                        bal["coal"] >= coal,
+                        bal["oil"] >= oil,
+                        bal["uranium"] >= uranium,
+                        bal["lead"] >= lead,
+                        bal["iron"] >= iron,
+                        bal["bauxite"] >= bauxite,
+                        bal["gasoline"] >= gasoline,
+                        bal["munitions"] >= munitions,
+                        bal["steel"] >= steel,
+                        bal["aluminum"] >= aluminum
+                    ]
+                    if all(bal_check):
+                        embed = discord.Embed(
+                            title=f"{account['nation_name']}'s withdrawal request.",
+                            description=f'''
+*double check nation name*^
+Money : {"${:,.2f}".format(money)}
+Food : {"{:,.2f}".format(food)}
+Coal : {"{:,.2f}".format(coal)}
+Oil : {"{:,.2f}".format(oil)}
+Uranium : {"{:,.2f}".format(uranium)}
+Lead : {"{:,.2f}".format(lead)}
+Iron : {"{:,.2f}".format(iron)}
+Bauxite : {"{:,.2f}".format(bauxite)}
+Gasoline : {"{:,.2f}".format(gasoline)}
+Munitions : {"{:,.2f}".format(munitions)}
+Steel : {"{:,.2f}".format(steel)}
+Aluminum : {"{:,.2f}".format(aluminum)}
+[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=nation&w_recipient={account['nation_name']}&w_note=withdrawal)
+[Withdrawal link for Yarr.](https://politicsandwar.com/alliance/id=4150&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=alliance&w_recipient=Arrgh&w_note=withdrawal)
+                            ''',
+                            colour=discord.Colour.dark_green())
+                        await ctx.respond(embed=embed)
+                        await ctx.respond('<@&576711598912045056>')
+                    else:
+                        await ctx.respond('You are requesting more than you have in arrgh bank.', ephemeral=True)
+                except:
+                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
+            else:
+                await ctx.respond('You either do not have an account or your discord is not connected to your account yet.', ephemeral=True)
+        else:
+            await ctx.respond(f'This command can only be used in {channel.mention}.', ephemeral=True)
+    else:
+        await ctx.respond('I don\'t serve landlubbers.')
+
+
+
 
 
 
