@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 import discord
 import pymongo
-import json
+from urllib.parse import quote
 import re
 import csv
 from datetime import datetime
@@ -115,6 +115,7 @@ Aluminum : {"{:,.2f}".format(balance["aluminum"])}
 @client.slash_command(description="Request a withdrawal from arrgh bank.")
 async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0'):
     role = discord.utils.get(ctx.guild.roles, name="Captain")
+    helm = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = client.get_channel(400427307334107158)
     if role in ctx.author.roles:
         if ctx.channel == channel:
@@ -165,12 +166,12 @@ Gasoline : {"{:,.2f}".format(gasoline)}
 Munitions : {"{:,.2f}".format(munitions)}
 Steel : {"{:,.2f}".format(steel)}
 Aluminum : {"{:,.2f}".format(aluminum)}
-[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=nation&w_recipient={account['nation_name']}&w_note=withdrawal)
+[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=nation&w_recipient={quote(account['nation_name'])}&w_note=withdrawal)
 [Withdrawal link for Yarr.](https://politicsandwar.com/alliance/id=4150&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=alliance&w_recipient=Arrgh&w_note=withdrawal)
                             ''',
                             colour=discord.Colour.dark_green())
                         await ctx.respond(embed=embed)
-                        await ctx.respond('<@&576711598912045056>')
+                        await ctx.respond({helm.mention})
                     else:
                         await ctx.respond('You are requesting more than you have in arrgh bank.', ephemeral=True)
                 except:
