@@ -38,8 +38,8 @@ async def on_ready():
 
 @client.slash_command(description="Check your balance in Arrgh bank. Helm can check someone's balance by entering a nation_id or user.")
 async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None, user:discord.User=None):
+    helm = discord.utils.get(ctx.guild.roles, name="Helm")
     if nation_id:
-        helm = discord.utils.get(ctx.guild.roles, name="Helm")
         if helm in ctx.author.roles:
             account = db.accounts.find_one({'_id':nation_id})
             if account:
