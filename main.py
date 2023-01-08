@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import discord
 import pymongo
+import json
 import re
 import csv
 from datetime import datetime
@@ -415,6 +416,7 @@ async def name_update():
     accounts = []
     for x in accounts_cursor:
         accounts.append(str(x['_id']))
+        accounts = json.dumps(accounts)
     async with aiohttp.ClientSession() as session:
         async with session.post(graphql, json={'query':f"{{nations(first: 500, id:{accounts}){{data{{id nation_name}}}}}}"}) as r:
             json_obj = await r.json()
