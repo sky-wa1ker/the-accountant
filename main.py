@@ -410,20 +410,19 @@ async def csvexport():
 
 
 
-@tasks.loop(minutes=180)
+@tasks.loop(minutes=360)
 async def name_update():
     accounts_cursor = db.accounts.find()
     accounts = []
     for x in accounts_cursor:
-        accounts.append(str(x['_id']))
-        accounts = json.dumps(accounts)
+        accounts.append(x['_id'])
     async with aiohttp.ClientSession() as session:
         async with session.post(graphql, json={'query':f"{{nations(first: 500, id:{accounts}){{data{{id nation_name}}}}}}"}) as r:
             json_obj = await r.json()
             nations = json_obj["data"]["nations"]["data"]
             for nation in nations:
-                if nation["id"] in accounts:
-                    db.accounts.update_one({'_id':int(nation["_id"])}, {"$set": {'nation_name':nation["nation_name"]}})
+                if int(nation["id"]) in accounts:
+                    db.accounts.update_one({'_id':int(nation["id"])}, {"$set": {'nation_name':nation["nation_name"]}})
 
 
 
