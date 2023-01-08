@@ -171,7 +171,7 @@ Aluminum : {"{:,.2f}".format(aluminum)}
                             ''',
                             colour=discord.Colour.dark_green())
                         await ctx.respond(embed=embed)
-                        await embed.reply(helm.mention, mention_author=False)
+                        await ctx.send(helm.mention)
                     else:
                         await ctx.respond('You are requesting more than you have in arrgh bank.', ephemeral=True)
                 except:
