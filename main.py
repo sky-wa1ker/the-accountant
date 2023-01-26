@@ -156,7 +156,7 @@ async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', 
                             if resources[resource] > 0:
                                 url_str += f"&w_{resource}={int(resources[resource])}"
                         embed = discord.Embed(
-                            title=f"{account['nation_name']}'s withdrawal request.",
+                            title=f"``{account['nation_name']}``'s withdrawal request.",
                             description=f'''
 *double check nation name*^
 Money : {"${:,.2f}".format(money)}
