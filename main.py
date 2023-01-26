@@ -150,6 +150,11 @@ async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', 
                         bal["aluminum"] >= aluminum
                     ]
                     if all(bal_check):
+                        resources = {"money":money, "food":food, "coal":coal, "oil":oil, "uranium":uranium, "lead":lead, "iron":iron, "bauxite":bauxite, "gasoline":gasoline, "munitions":munitions, "steel":steel, "aluminum":aluminum}
+                        url_str = ""
+                        for resource in resources:
+                            if resources[resource] > 0:
+                                url_str += f"&w_{resource}={int(resources[resource])}"
                         embed = discord.Embed(
                             title=f"{account['nation_name']}'s withdrawal request.",
                             description=f'''
@@ -166,8 +171,8 @@ Gasoline : {"{:,.2f}".format(gasoline)}
 Munitions : {"{:,.2f}".format(munitions)}
 Steel : {"{:,.2f}".format(steel)}
 Aluminum : {"{:,.2f}".format(aluminum)}
-[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=nation&w_recipient={quote(account['nation_name'])}&w_note=withdrawal)
-[Withdrawal link for Yarr.](https://politicsandwar.com/alliance/id=4150&display=bank&w_money={money}&w_food={food}&w_coal={coal}&w_oil={oil}&w_uranium={uranium}&w_lead={lead}&w_iron={iron}&w_bauxite={bauxite}&w_gasoline={gasoline}&w_munitions={munitions}&w_steel={steel}&w_aluminum={aluminum}&w_type=alliance&w_recipient=Arrgh&w_note=withdrawal)
+[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank{url_str}&w_type=nation&w_recipient={quote(account['nation_name'])})
+[Withdrawal link for Yarr.](https://politicsandwar.com/alliance/id=4150&display=bank{url_str}&w_type=alliance&w_recipient=Arrgh)
                             ''',
                             colour=discord.Colour.dark_green())
                         await ctx.respond(embed=embed)
