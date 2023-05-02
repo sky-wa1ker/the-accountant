@@ -3,7 +3,6 @@ import aiohttp
 import asyncio
 import discord
 import pymongo
-from urllib.parse import quote
 import re
 import csv
 from datetime import datetime
