@@ -170,7 +170,7 @@ Gasoline : {"{:,.2f}".format(gasoline)}
 Munitions : {"{:,.2f}".format(munitions)}
 Steel : {"{:,.2f}".format(steel)}
 Aluminum : {"{:,.2f}".format(aluminum)}
-[Withdrawal link for <@&576711598912045056>](https://politicsandwar.com/alliance/id=913&display=bank{url_str}&w_type=nation&w_recipient={(account['nation_name']).replace(" ", "+")})
+[Withdrawal link for Helm.](https://politicsandwar.com/alliance/id=913&display=bank{url_str}&w_type=nation&w_recipient={(account['nation_name']).replace(" ", "+")})
 [Withdrawal link for Yarr.](https://politicsandwar.com/alliance/id=4150&display=bank{url_str}&w_type=alliance&w_recipient=Arrgh)
                             ''',
                             colour=discord.Colour.dark_green())
