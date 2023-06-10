@@ -110,7 +110,6 @@ Aluminum : {"{:,.2f}".format(balance["aluminum"])}
 
 
 
-
 @client.slash_command(description="Request a withdrawal from arrgh bank.")
 async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0'):
     role = discord.utils.get(ctx.guild.roles, name="Captain")
