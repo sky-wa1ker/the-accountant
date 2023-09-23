@@ -36,13 +36,21 @@ async def on_ready():
 
 
 @client.slash_command(description="Check your balance in Arrgh bank. Helm can check someone's balance by entering a nation_id or user.")
-async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None, user:discord.User=None):
+async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None, user:discord.User=None, bank_value:bool=False):
     helm = discord.utils.get(ctx.guild.roles, name="Helm")
+    bank_total_value = 'not opted to check.'
     if nation_id:
         if helm in ctx.author.roles:
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 balance = account["balance"]
+                if bank_value:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(graphql, json={'query':"{tradeprices(first:1){data{coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}"}) as query:
+                            json_obj = await query.json()
+                            prices = json_obj["data"]["tradeprices"]["data"][0]
+                            bank_total_value_float = (balance["money"]) + (balance["food"]*prices["food"]) + (balance["coal"]*prices["coal"]) + (balance["oil"]*prices["oil"]) + (balance["uranium"]*prices["uranium"]) + (balance["lead"]*prices["lead"]) + (balance["iron"]*prices["iron"]) + (balance["bauxite"]*prices["bauxite"]) + (balance["gasoline"]*prices["gasoline"]) + (balance["munitions"]*prices["munitions"]) + (balance["steel"]*prices["steel"]) + (balance["aluminum"]*prices["aluminum"])
+                            bank_total_value = "${:,.2f}".format(bank_total_value_float)
                 if account["account_type"] == 'active':
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
@@ -60,6 +68,8 @@ Gasoline : {"{:,.2f}".format(balance["gasoline"])}
 Munitions : {"{:,.2f}".format(balance["munitions"])}
 Steel : {"{:,.2f}".format(balance["steel"])}
 Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+
+Total Bank Value : **{bank_total_value}**
                 ''',
                 color=color)
                 await ctx.respond(embed=embed, ephemeral=True)
@@ -80,6 +90,13 @@ Aluminum : {"{:,.2f}".format(balance["aluminum"])}
             account = db.accounts.find_one({"discord_id":user.id})
             if account:
                 balance = account["balance"]
+                if bank_value:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.post(graphql, json={'query':"{tradeprices(first:1){data{coal oil uranium iron bauxite lead gasoline munitions steel aluminum food}}}"}) as query:
+                            json_obj = await query.json()
+                            prices = json_obj["data"]["tradeprices"]["data"][0]
+                            bank_total_value_float = (balance["money"]) + (balance["food"]*prices["food"]) + (balance["coal"]*prices["coal"]) + (balance["oil"]*prices["oil"]) + (balance["uranium"]*prices["uranium"]) + (balance["lead"]*prices["lead"]) + (balance["iron"]*prices["iron"]) + (balance["bauxite"]*prices["bauxite"]) + (balance["gasoline"]*prices["gasoline"]) + (balance["munitions"]*prices["munitions"]) + (balance["steel"]*prices["steel"]) + (balance["aluminum"]*prices["aluminum"])
+                            bank_total_value = "${:,.2f}".format(bank_total_value_float)
                 if account["account_type"] == 'active':
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
@@ -97,6 +114,8 @@ Gasoline : {"{:,.2f}".format(balance["gasoline"])}
 Munitions : {"{:,.2f}".format(balance["munitions"])}
 Steel : {"{:,.2f}".format(balance["steel"])}
 Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+
+Total Bank Value : **{bank_total_value}**
                 ''',
                 color=color)
                 await ctx.respond(embed=embed, ephemeral=True)
