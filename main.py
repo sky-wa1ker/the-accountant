@@ -130,7 +130,7 @@ Total Bank Value : **{bank_total_value}**
 
 
 @client.slash_command(description="Request a withdrawal from arrgh bank.")
-async def withdraw(ctx, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0'):
+async def withdraw(ctx, ping:bool=True, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0'):
     role = discord.utils.get(ctx.guild.roles, name="Captain")
     helm = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = client.get_channel(400427307334107158)
@@ -193,7 +193,8 @@ Aluminum : {"{:,.2f}".format(aluminum)}
                             ''',
                             colour=discord.Colour.dark_green())
                         await ctx.respond(embed=embed)
-                        await ctx.send(helm.mention)
+                        if ping:
+                            await ctx.send(helm.mention)
                     else:
                         await ctx.respond('You are requesting more than you have in arrgh bank.', ephemeral=True)
                 except:
