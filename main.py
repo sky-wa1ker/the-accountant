@@ -360,6 +360,95 @@ Virtual transaction ID is : ``{last_tx_id}``
 
 
 
+@client.slash_command(description = "Check your last 5 transactions.")
+async def transactions(ctx, nation_id:discord.Option(int, "Only Helm can use this.", required=False)): # type: ignore
+    await ctx.defer()
+    helm = discord.utils.get(ctx.guild.roles, name="Helm")
+    if nation_id and helm in ctx.author.roles:
+        pass
+    else:
+        try:
+            nation_id = db.accounts.find_one({"discord_id":ctx.user.id})['_id']
+        except:
+            await ctx.respond("Can't find your account.", ephemeral=True)
+    transactions = [transaction for transaction in db.transactions.find({ '$or': [{'sender_id':nation_id}, {'receiver_id':nation_id}] }).sort({"tx_id": -1}).limit(5)]
+    embed = discord.Embed(title=f"Last 5 transactions of {nation_id}", description=f'''
+```json
+Type: {transactions[0]['transaction_type']}
+Money: {"${:,.2f}".format(transactions[0]["money"])}, Food: {"{:,.2f}".format(transactions[0]['food'])}, Coal: {"{:,.2f}".format(transactions[0]['coal'])}, Oil: {"{:,.2f}".format(transactions[0]['oil'])}, Uranium: {"{:,.2f}".format(transactions[0]['uranium'])}, Iron : {"{:,.2f}".format(transactions[0]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[0]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[0]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[0]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[0]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[0]['aluminum'])}
+```
+```json
+Type: {transactions[1]['transaction_type']}
+Money: {"${:,.2f}".format(transactions[1]["money"])}, Food: {"{:,.2f}".format(transactions[1]['food'])}, Coal: {"{:,.2f}".format(transactions[1]['coal'])}, Oil: {"{:,.2f}".format(transactions[1]['oil'])}, Uranium: {"{:,.2f}".format(transactions[1]['uranium'])}, Iron : {"{:,.2f}".format(transactions[1]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[1]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[1]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[1]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[1]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[1]['aluminum'])}
+```
+```json
+Type: {transactions[2]['transaction_type']}
+Money: {"${:,.2f}".format(transactions[2]["money"])}, Food: {"{:,.2f}".format(transactions[2]['food'])}, Coal: {"{:,.2f}".format(transactions[2]['coal'])}, Oil: {"{:,.2f}".format(transactions[2]['oil'])}, Uranium: {"{:,.2f}".format(transactions[2]['uranium'])}, Iron : {"{:,.2f}".format(transactions[2]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[2]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[2]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[2]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[2]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[2]['aluminum'])}
+```
+```json
+Type: {transactions[3]['transaction_type']}
+Money: {"${:,.2f}".format(transactions[3]["money"])}, Food: {"{:,.2f}".format(transactions[3]['food'])}, Coal: {"{:,.2f}".format(transactions[3]['coal'])}, Oil: {"{:,.2f}".format(transactions[3]['oil'])}, Uranium: {"{:,.2f}".format(transactions[3]['uranium'])}, Iron : {"{:,.2f}".format(transactions[3]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[3]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[3]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[3]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[3]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[3]['aluminum'])}
+```
+```json
+Type: {transactions[4]['transaction_type']}
+Money: {"${:,.2f}".format(transactions[4]["money"])}, Food: {"{:,.2f}".format(transactions[4]['food'])}, Coal: {"{:,.2f}".format(transactions[4]['coal'])}, Oil: {"{:,.2f}".format(transactions[4]['oil'])}, Uranium: {"{:,.2f}".format(transactions[4]['uranium'])}, Iron : {"{:,.2f}".format(transactions[4]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[4]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[4]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[4]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[4]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[4]['aluminum'])}
+```
+''')
+    await ctx.respond(embed=embed, ephemeral=True)
+
+
+loan = discord.SlashCommandGroup("loan", "Loan related commands")
+@loan.command(description="Add a new loan")
+async def add(ctx, note:str, nation_id:int, name:str, money:int=0, food:int=0, coal:int=0,
+              oil:int=0, uranium:int=0, lead:int=0, iron:int=0, bauxite:int=0,
+              gasoline:int=0, munitions:int=0, steel:int=0, aluminum:int=0):
+    
+    await ctx.defer()
+    channel = client.get_channel(542384682818600971)
+    admiral = discord.utils.get(ctx.guild.roles, name="Admiral")
+    last_loan = db.loans.find().sort([('_id', -1)]).limit(1)
+    last_loan_id = dict(last_loan[0])["_id"] + 1
+
+
+    if not admiral in ctx.author.roles:
+        await ctx.respond("Only an admiral can use this command")
+
+    else:
+        try:
+            if ctx.channel == channel:
+                db.loans.insert_one({
+                    "_id":last_loan_id,
+                    "status":"active",
+                    "banker":f"{ctx.author.display_name} ({ctx.author.name})",
+                    "note":note,
+                    "nation_id":nation_id,
+                    "name":name,
+                    "money":money,
+                    "food":food,
+                    "coal":coal,
+                    "oil":oil,
+                    "uranium":uranium,
+                    "lead":lead,
+                    "iron":iron,
+                    "bauxite":bauxite,
+                    "gasoline":gasoline,
+                    "munitions":munitions,
+                    "steel":steel,
+                    "aluminum":aluminum
+                })
+                await ctx.respond(f'''
+{ctx.author.name} granted loan for ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
+to ``{name} ({nation_id})``
+Loan ID is: ``{last_loan_id}``
+Note: ``{note}``
+    ''')
+            else:
+                await ctx.respond(f"This command can only be used in {channel.mention}")
+        except:
+            await ctx.respond("Could not add loan. Please try again later.")
+client.add_application_command(loan)
+
+
 
 @client.slash_command(description="Helm uses this command to set an account active.")
 async def active(ctx, nation_id:int):
