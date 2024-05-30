@@ -386,7 +386,10 @@ async def transactions(ctx, nation_id:discord.Option(int, "Only Helm can use thi
         except:
             await ctx.respond("Can't find your account.", ephemeral=True)
     transactions = [transaction for transaction in db.transactions.find({ '$or': [{'sender_id':nation_id}, {'receiver_id':nation_id}] }).sort({"tx_id": -1}).limit(5)]
-    embed = discord.Embed(title=f"Last 5 transactions of {nation_id}", description=f'''
+    if len(transactions) < 5:
+        await ctx.respond('You have less than 5 transactions, try again when you have more.')
+    else:
+        embed = discord.Embed(title=f"Last 5 transactions of {nation_id}", description=f'''
 ```json
 Type: {transactions[0]['transaction_type']}
 Money: {"${:,.2f}".format(transactions[0]["money"])}, Food: {"{:,.2f}".format(transactions[0]['food'])}, Coal: {"{:,.2f}".format(transactions[0]['coal'])}, Oil: {"{:,.2f}".format(transactions[0]['oil'])}, Uranium: {"{:,.2f}".format(transactions[0]['uranium'])}, Iron : {"{:,.2f}".format(transactions[0]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[0]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[0]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[0]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[0]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[0]['aluminum'])}
@@ -408,7 +411,7 @@ Type: {transactions[4]['transaction_type']}
 Money: {"${:,.2f}".format(transactions[4]["money"])}, Food: {"{:,.2f}".format(transactions[4]['food'])}, Coal: {"{:,.2f}".format(transactions[4]['coal'])}, Oil: {"{:,.2f}".format(transactions[4]['oil'])}, Uranium: {"{:,.2f}".format(transactions[4]['uranium'])}, Iron : {"{:,.2f}".format(transactions[4]['iron'])}, Bauxite: {"{:,.2f}".format(transactions[4]['bauxite'])}, Lead: {"{:,.2f}".format(transactions[4]['lead'])}, Gasoline: {"{:,.2f}".format(transactions[4]['gasoline'])}, Steel: {"{:,.2f}".format(transactions[4]['steel'])}, Aluminum: {"{:,.2f}".format(transactions[4]['aluminum'])}
 ```
 ''')
-    await ctx.respond(embed=embed, ephemeral=True)
+        await ctx.respond(embed=embed, ephemeral=True)
 
 
 
