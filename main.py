@@ -35,8 +35,16 @@ async def on_ready():
 
 
 
-@client.slash_command(description="Check your balance in Arrgh bank. Helm can check someone's balance by entering a nation_id or user.")
-async def balance(ctx, copy_in_dm:bool=False, nation_id:int=None, user:discord.User=None, bank_value:bool=False):
+
+balance = discord.SlashCommandGroup("balance", "Balance related commands")
+
+@balance.command(description="Check your balance in Arrgh bank.")
+async def check(ctx,
+                  copy_in_dm:discord.Option(bool, "Sends a copy in your DM if set to True", default=False),
+                  nation_id:discord.Option(int, "Helm can check balance for any nation with this", required=False),
+                  user:discord.Option(discord.User, "Helm can check balance for any user", required=False),
+                  bank_value:discord.Option(bool, "Shows the total value of your bank if set to True", required=False)):
+    
     helm = discord.utils.get(ctx.guild.roles, name="Helm")
     bank_total_value = 'not opted to check.'
     if nation_id:
@@ -128,6 +136,103 @@ Total Bank Value : **{bank_total_value}**
 
 
 
+
+@balance.command(description="Helm uses this to add money to an account")
+async def add(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    channel = client.get_channel(542384682818600971)
+    if ctx.channel == channel:
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({'_id':nation_id})
+            if account:
+                try:
+                    money = float(re.sub('\$|\,', '', money))
+                    food = float(food.replace(',', ''))
+                    coal = float(coal.replace(',', ''))
+                    oil = float(oil.replace(',', ''))
+                    uranium = float(uranium.replace(',', ''))
+                    lead = float(lead.replace(',', ''))
+                    iron = float(iron.replace(',', ''))
+                    bauxite = float(bauxite.replace(',', ''))
+                    gasoline = float(gasoline.replace(',', ''))
+                    munitions = float(munitions.replace(',', ''))
+                    steel = float(steel.replace(',', ''))
+                    aluminum = float(aluminum.replace(',', ''))
+                    old_bal = account["balance"]
+                    new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
+                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                    contents = {"money": money, "food": food, "coal": coal, "oil": oil, "uranium": uranium, "lead": lead, "iron": iron, "bauxite": bauxite, "gasoline": gasoline, "munitions": munitions, "steel": steel, "aluminum": aluminum}
+                    last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
+                    last_tx_id = dict(last_tx[0])["_id"] + 1
+                    db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                    await ctx.respond(f'''
+{ctx.author.name} added ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
+to ``account: {nation_id}``
+note : ``{note}``
+Virtual transaction ID is : ``{last_tx_id}``
+    ''')
+                except:
+                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
+            else:
+                await ctx.respond('Could not find that account.', ephemeral=True)
+        else:
+            await ctx.respond('Only Helm can do manual transactions.', ephemeral=True)
+    else:
+        await ctx.respond(f'This command can only be used in {channel.mention}.', ephemeral=True)
+
+
+
+
+
+
+@balance.command(description="Helm uses this to deduct money from an account")
+async def deduct(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    channel = client.get_channel(542384682818600971)
+    if ctx.channel == channel:
+        if role in ctx.author.roles:
+            account = db.accounts.find_one({'_id':nation_id})
+            if account:
+                try:
+                    money = float(re.sub('\$|\,', '', money))
+                    food = float(food.replace(',', ''))
+                    coal = float(coal.replace(',', ''))
+                    oil = float(oil.replace(',', ''))
+                    uranium = float(uranium.replace(',', ''))
+                    lead = float(lead.replace(',', ''))
+                    iron = float(iron.replace(',', ''))
+                    bauxite = float(bauxite.replace(',', ''))
+                    gasoline = float(gasoline.replace(',', ''))
+                    munitions = float(munitions.replace(',', ''))
+                    steel = float(steel.replace(',', ''))
+                    aluminum = float(aluminum.replace(',', ''))
+                    old_bal = account["balance"]
+                    new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
+                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
+                    contents = {"money": money, "food": food, "coal": coal, "oil": oil, "uranium": uranium, "lead": lead, "iron": iron, "bauxite": bauxite, "gasoline": gasoline, "munitions": munitions, "steel": steel, "aluminum": aluminum}
+                    last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
+                    last_tx_id = dict(last_tx[0])["_id"] + 1
+                    db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
+                    await ctx.respond(f'''
+{ctx.author.name} deducted ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
+from ``account: {nation_id}``
+note : ``{note}``
+Virtual transaction ID is : ``{last_tx_id}``
+    ''')
+                except:
+                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
+            else:
+                await ctx.respond('Could not find that account.', ephemeral=True)
+        else:
+            await ctx.respond('Only Helm can do manual transactions.', ephemeral=True)
+    else:
+        await ctx.respond(f'This command can only be used in {channel.mention}.', ephemeral=True)
+
+client.add_application_command(balance)
+
+
+
+
 @client.slash_command(description="Request a withdrawal from arrgh bank.")
 async def withdraw(ctx, ping:bool=True, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0'):
     role = discord.utils.get(ctx.guild.roles, name="Captain")
@@ -211,8 +316,10 @@ Aluminum : {"{:,.2f}".format(aluminum)}
 
 
 
-@client.slash_command(description='Helm uses this command to open a new account in database, discord not required.')
-async def adduser(ctx, nation_id:int, user:discord.User=None):
+account = discord.SlashCommandGroup("account", "Account related commands")
+
+@account.command(description="Open a new account in arrgh bank, only for Helm")
+async def open(ctx, nation_id:int, user:discord.User=None):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role not in ctx.author.roles:
         await ctx.respond('You\'re not allowed to use this command, contact Helm if you want an account for yourself.')
@@ -246,7 +353,8 @@ async def adduser(ctx, nation_id:int, user:discord.User=None):
                         await ctx.followup.send(f'New account added for the nation {nations[0]["nation_name"]} and user {user.name}! last transacion is {last_transaction}.')
 
 
-@client.slash_command(description="Helm uses this command to add a discord account to an existing arrgh account.")
+@account.command(description="Add discord to an account, only for Helm")
+
 async def adddiscord(ctx, nation_id:int, user:discord.User):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role in ctx.author.roles:
@@ -266,101 +374,7 @@ async def adddiscord(ctx, nation_id:int, user:discord.User):
 
 
 
-
-@client.slash_command(description="Helm uses this to manually add something to accounts, use carefully and write clear note.")
-async def addbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    channel = client.get_channel(542384682818600971)
-    if ctx.channel == channel:
-        if role in ctx.author.roles:
-            account = db.accounts.find_one({'_id':nation_id})
-            if account:
-                try:
-                    money = float(re.sub('\$|\,', '', money))
-                    food = float(food.replace(',', ''))
-                    coal = float(coal.replace(',', ''))
-                    oil = float(oil.replace(',', ''))
-                    uranium = float(uranium.replace(',', ''))
-                    lead = float(lead.replace(',', ''))
-                    iron = float(iron.replace(',', ''))
-                    bauxite = float(bauxite.replace(',', ''))
-                    gasoline = float(gasoline.replace(',', ''))
-                    munitions = float(munitions.replace(',', ''))
-                    steel = float(steel.replace(',', ''))
-                    aluminum = float(aluminum.replace(',', ''))
-                    old_bal = account["balance"]
-                    new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
-                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                    contents = {"money": money, "food": food, "coal": coal, "oil": oil, "uranium": uranium, "lead": lead, "iron": iron, "bauxite": bauxite, "gasoline": gasoline, "munitions": munitions, "steel": steel, "aluminum": aluminum}
-                    last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
-                    last_tx_id = dict(last_tx[0])["_id"] + 1
-                    db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Deposit", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
-                    await ctx.respond(f'''
-{ctx.author.name} added ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
-to ``account: {nation_id}``
-note : ``{note}``
-Virtual transaction ID is : ``{last_tx_id}``
-    ''')
-                except:
-                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
-            else:
-                await ctx.respond('Could not find that account.', ephemeral=True)
-        else:
-            await ctx.respond('Only Helm can do manual transactions.', ephemeral=True)
-    else:
-        await ctx.respond(f'This command can only be used in {channel.mention}.', ephemeral=True)
-
-
-
-
-
-
-@client.slash_command(description="Helm uses this to manually deduct something from accounts, use carefully and write clear note.")
-async def deductbalance(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    channel = client.get_channel(542384682818600971)
-    if ctx.channel == channel:
-        if role in ctx.author.roles:
-            account = db.accounts.find_one({'_id':nation_id})
-            if account:
-                try:
-                    money = float(re.sub('\$|\,', '', money))
-                    food = float(food.replace(',', ''))
-                    coal = float(coal.replace(',', ''))
-                    oil = float(oil.replace(',', ''))
-                    uranium = float(uranium.replace(',', ''))
-                    lead = float(lead.replace(',', ''))
-                    iron = float(iron.replace(',', ''))
-                    bauxite = float(bauxite.replace(',', ''))
-                    gasoline = float(gasoline.replace(',', ''))
-                    munitions = float(munitions.replace(',', ''))
-                    steel = float(steel.replace(',', ''))
-                    aluminum = float(aluminum.replace(',', ''))
-                    old_bal = account["balance"]
-                    new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
-                    db.accounts.update_one(account, {"$set": {'balance':new_bal}})
-                    contents = {"money": money, "food": food, "coal": coal, "oil": oil, "uranium": uranium, "lead": lead, "iron": iron, "bauxite": bauxite, "gasoline": gasoline, "munitions": munitions, "steel": steel, "aluminum": aluminum}
-                    last_tx = db.v_transactions.find().sort([('_id', -1)]).limit(1)
-                    last_tx_id = dict(last_tx[0])["_id"] + 1
-                    db.v_transactions.insert_one({"_id":last_tx_id, "timestamp":str({datetime.utcnow().strftime('%B %d %Y - %H:%M:%S')}), "account":nation_id, "type":"Withdrawal", "contents":contents, "banker":f'{ctx.author.display_name} ({ctx.author.name}),', "note":note})
-                    await ctx.respond(f'''
-{ctx.author.name} deducted ``${money:,} cash, {food:,} food, {coal:,} coal, {oil:,} oil, {uranium:,} uranium, {lead:,} lead, {iron:,} iron, {bauxite:,} bauxite, {gasoline:,} gasoline, {munitions:,} munitions, {steel:,} steel, {aluminum:,} aluminum`` 
-from ``account: {nation_id}``
-note : ``{note}``
-Virtual transaction ID is : ``{last_tx_id}``
-    ''')
-                except:
-                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
-            else:
-                await ctx.respond('Could not find that account.', ephemeral=True)
-        else:
-            await ctx.respond('Only Helm can do manual transactions.', ephemeral=True)
-    else:
-        await ctx.respond(f'This command can only be used in {channel.mention}.', ephemeral=True)
-
-
-
-@client.slash_command(description = "Check your last 5 transactions.")
+@account.command(description="Get last 5 transactions of your nation.")
 async def transactions(ctx, nation_id:discord.Option(int, "Only Helm can use this.", required=False)): # type: ignore
     await ctx.defer()
     helm = discord.utils.get(ctx.guild.roles, name="Helm")
@@ -395,6 +409,96 @@ Money: {"${:,.2f}".format(transactions[4]["money"])}, Food: {"{:,.2f}".format(tr
 ```
 ''')
     await ctx.respond(embed=embed, ephemeral=True)
+
+
+
+
+@account.command(description="Set an account active, only for Helm")
+async def active(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles: # 1
+        await ctx.defer()
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["account_type"] == 'inactive':
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(graphql, json={'query':f'{{bankrecs(or_id: {nation_id}, first: 1) {{data {{id}}}}}}'}) as query:
+                        json_obj = await query.json()
+                        transanctions = json_obj['data']['bankrecs']['data']
+                        if len(transanctions) > 0:
+                            last_transaction = int(transanctions[0]['id']) + 1
+                            db.accounts.update_one(account, {"$set": {"account_type": "active", "last_transaction_id": last_transaction}})
+                            await ctx.respond("Account status changed from inactive to active.")
+                        else:
+                            await ctx.respond("epic api fail, help! <@343397899369054219>")
+            else:
+                await ctx.respond("Account is already active.")
+        else:
+            await ctx.respond("Could not find this account.")
+    else:
+        await ctx.respond("You are not Helm.")
+
+
+
+
+@account.command(description="Set an account inactive, only for Helm")
+async def inactive(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles: # 1
+        await ctx.defer()
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["account_type"] == 'active':
+                db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
+                await ctx.respond("Account status changed from active to inactive.")
+            else:
+                await ctx.respond("Account is already inactive.")
+        else:
+            await ctx.respond("Could not find this account.")
+    else:
+        await ctx.respond("You are not Helm.")
+
+
+audit = account.create_subgroup("audit", description="Mark an account as due for audit or not due for audit.")
+
+@audit.command(description="Mark an account as due for audit.")
+async def flag(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["audit_needed"] == True:
+                await ctx.respond("Account is already flagged for audit.", ephemeral=True)
+            else:
+                db.accounts.update_one(account, {"$set": {"audit_needed": True}})
+                await ctx.respond("Account flagged for audit.", ephemeral=True)
+        else:
+            await ctx.respond("Could not find this account.", ephemeral=True)
+    else:
+        await ctx.respond("You are not Helm.", ephemeral=True)
+
+
+
+
+@audit.command(description="Mark an account as not due for audit.")
+async def clear(ctx, nation_id:int):
+    role = discord.utils.get(ctx.guild.roles, name="Helm")
+    if role in ctx.author.roles:
+        account = db.accounts.find_one({'_id':nation_id})
+        if account:
+            if account["audit_needed"] == False:
+                await ctx.respond("Account is not flagged for audit.", ephemeral=True)
+            else:
+                db.accounts.update_one(account, {"$set": {"audit_needed": False}})
+                await ctx.respond("Audit flag removed from account.", ephemeral=True)
+        else:
+            await ctx.respond("Could not find this account.", ephemeral=True)
+    else:
+        await ctx.respond("You are not Helm.", ephemeral=True)
+
+client.add_application_command(account)
+
+
 
 
 loan = discord.SlashCommandGroup("loan", "Loan related commands")
@@ -450,136 +554,10 @@ client.add_application_command(loan)
 
 
 
-@client.slash_command(description="Helm uses this command to set an account active.")
-async def active(ctx, nation_id:int):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles: # 1
-        await ctx.defer()
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            if account["account_type"] == 'inactive':
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(graphql, json={'query':f'{{bankrecs(or_id: {nation_id}, first: 1) {{data {{id}}}}}}'}) as query:
-                        json_obj = await query.json()
-                        transanctions = json_obj['data']['bankrecs']['data']
-                        if len(transanctions) > 0:
-                            last_transaction = int(transanctions[0]['id']) + 1
-                            db.accounts.update_one(account, {"$set": {"account_type": "active", "last_transaction_id": last_transaction}})
-                            await ctx.respond("Account status changed from inactive to active.")
-                        else:
-                            await ctx.respond("epic api fail, help! <@343397899369054219>")
-            else:
-                await ctx.respond("Account is already active.")
-        else:
-            await ctx.respond("Could not find this account.")
-    else:
-        await ctx.respond("You are not Helm.")
 
 
 
-
-@client.slash_command(description="Helm uses this to set an account active.")
-async def inactive(ctx, nation_id:int):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles: # 1
-        await ctx.defer()
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            if account["account_type"] == 'active':
-                db.accounts.update_one(account, {"$set": {"account_type": "inactive"}})
-                await ctx.respond("Account status changed from active to inactive.")
-            else:
-                await ctx.respond("Account is already inactive.")
-        else:
-            await ctx.respond("Could not find this account.")
-    else:
-        await ctx.respond("You are not Helm.")
-
-
-
-
-
-@tasks.loop(hours=3)
-async def csvexport():
-    channel = client.get_channel(312420656312614912)
-    acc = db.accounts.find({})
-    accounts = []
-    for x in acc:
-        accounts.append(x)
-    keys = keys = accounts[0].keys()
-    with open(f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv', 'w', newline='')  as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(accounts)
-        await channel.send(file=discord.File((f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv')))
-        await asyncio.sleep(3)
-    directory = "./"
-    files_in_directory = os.listdir(directory)
-    filtered_files = [file for file in files_in_directory if file.endswith(".csv")]
-    for file in filtered_files:
-        path_to_file = os.path.join(directory, file)
-        os.remove(path_to_file)
-
-
-
-@tasks.loop(minutes=360)
-async def name_update():
-    accounts_cursor = db.accounts.find()
-    accounts = []
-    for x in accounts_cursor:
-        accounts.append(x['_id'])
-    async with aiohttp.ClientSession() as session:
-        async with session.post(graphql, json={'query':f"{{nations(first: 500, id:{accounts}){{data{{id nation_name}}}}}}"}) as r:
-            json_obj = await r.json()
-            nations = json_obj["data"]["nations"]["data"]
-            for nation in nations:
-                if int(nation["id"]) in accounts:
-                    db.accounts.update_one({'_id':int(nation["id"])}, {"$set": {'nation_name':nation["nation_name"]}})
-
-
-
-
-@client.slash_command(description="Mark an account as due for audit.")
-async def audit_flag(ctx, nation_id:int):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            if account["audit_needed"] == True:
-                await ctx.respond("Account is already flagged for audit.", ephemeral=True)
-            else:
-                db.accounts.update_one(account, {"$set": {"audit_needed": True}})
-                await ctx.respond("Account flagged for audit.", ephemeral=True)
-        else:
-            await ctx.respond("Could not find this account.", ephemeral=True)
-    else:
-        await ctx.respond("You are not Helm.", ephemeral=True)
-
-
-
-
-@client.slash_command(description="Mark an account as not due for audit.")
-async def audit_clear(ctx, nation_id:int):
-    role = discord.utils.get(ctx.guild.roles, name="Helm")
-    if role in ctx.author.roles:
-        account = db.accounts.find_one({'_id':nation_id})
-        if account:
-            if account["audit_needed"] == False:
-                await ctx.respond("Account is not flagged for audit.", ephemeral=True)
-            else:
-                db.accounts.update_one(account, {"$set": {"audit_needed": False}})
-                await ctx.respond("Audit flag removed from account.", ephemeral=True)
-        else:
-            await ctx.respond("Could not find this account.", ephemeral=True)
-    else:
-        await ctx.respond("You are not Helm.", ephemeral=True)
-
-
-
-
-
-
-@tasks.loop(minutes=2)
+@tasks.loop(minutes=5)
 async def transaction_scanner():
     role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
     channel = client.get_channel(798609356715196424) 
@@ -736,6 +714,48 @@ async def transaction_scanner():
                             await opsec_channel.send(f'{role.mention} unknown type tx_id: {transaction["id"]}')
                     except:
                         await channel.send(f'{role.mention} could not process tx_id: {transaction["id"]}')
+
+
+
+
+@tasks.loop(hours=3)
+async def csvexport():
+    channel = client.get_channel(312420656312614912)
+    acc = db.accounts.find({})
+    accounts = []
+    for x in acc:
+        accounts.append(x)
+    keys = keys = accounts[0].keys()
+    with open(f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv', 'w', newline='')  as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(accounts)
+        await channel.send(file=discord.File((f'arrgh_bank_{str(datetime.utcnow().strftime("%m_%d_%Y_%H_%M"))}.csv')))
+        await asyncio.sleep(3)
+    directory = "./"
+    files_in_directory = os.listdir(directory)
+    filtered_files = [file for file in files_in_directory if file.endswith(".csv")]
+    for file in filtered_files:
+        path_to_file = os.path.join(directory, file)
+        os.remove(path_to_file)
+
+
+
+@tasks.loop(minutes=360)
+async def name_update():
+    accounts_cursor = db.accounts.find()
+    accounts = []
+    for x in accounts_cursor:
+        accounts.append(x['_id'])
+    async with aiohttp.ClientSession() as session:
+        async with session.post(graphql, json={'query':f"{{nations(first: 500, id:{accounts}){{data{{id nation_name}}}}}}"}) as r:
+            json_obj = await r.json()
+            nations = json_obj["data"]["nations"]["data"]
+            for nation in nations:
+                if int(nation["id"]) in accounts:
+                    db.accounts.update_one({'_id':int(nation["id"])}, {"$set": {'nation_name':nation["nation_name"]}})
+
+
 
 
 
