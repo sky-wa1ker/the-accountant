@@ -320,8 +320,8 @@ Aluminum : {"{:,.2f}".format(aluminum)}
 
 account = discord.SlashCommandGroup("account", "Account related commands")
 
-@account.command(description="Open a new account in arrgh bank, only for Helm")
-async def open(ctx, nation_id:int, user:discord.User=None):
+@account.command(description="Create a new account in arrgh bank, only for Helm")
+async def create(ctx, nation_id:int, user:discord.User=None):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     if role not in ctx.author.roles:
         await ctx.respond('You\'re not allowed to use this command, contact Helm if you want an account for yourself.')
