@@ -726,26 +726,23 @@ Food : {transaction['food']}''', color=dcolor)
 
 
 
-@tasks.loop(hours=3)
+@tasks.loop(hours=4)
 async def csvexport():
     channel = client.get_channel(312420656312614912)
     acc = db.accounts.find({})
-    accounts = []
-    for x in acc:
-        accounts.append(x)
-    keys = keys = accounts[0].keys()
-    with open(f'arrgh_bank_{str(datetime.now(timezone.utc).strftime("%m_%d_%Y_%H_%M"))}.csv', 'w', newline='')  as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(accounts)
-        await channel.send(file=discord.File((f'arrgh_bank_{str(datetime.now(timezone.utc).strftime("%m_%d_%Y_%H_%M"))}.csv')))
-        await asyncio.sleep(3)
-    directory = "./"
-    files_in_directory = os.listdir(directory)
-    filtered_files = [file for file in files_in_directory if file.endswith(".csv")]
-    for file in filtered_files:
-        path_to_file = os.path.join(directory, file)
-        os.remove(path_to_file)
+    accounts = [x for x in acc]
+    if accounts:
+        keys = accounts[0].keys()
+        filename = f'arrgh_bank_{datetime.now(timezone.utc).strftime("%m_%d_%Y_%H_%M")}.csv'
+        with open(filename, 'w', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(accounts)
+        await channel.send(file=discord.File(filename))
+        try:
+            os.remove(filename)
+        except Exception as e:
+            print(f"Failed to delete {filename}: {e}")
 
 
 
