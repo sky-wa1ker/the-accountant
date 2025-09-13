@@ -15,6 +15,15 @@ api_key = os.environ['API_KEY']
 db_client = MongoClient(os.environ['DB_ACCESS_URL'])
 db = db_client.get_database('the_accountant_db')
 graphql = f"https://api.politicsandwar.com/graphql?api_key={api_key}"
+potato_api_key = os.environ['POTATO_API_KEY']
+bank_bot_key = os.environ['X_BOT_KEY']
+potato_graphql = f"https://api.politicsandwar.com/graphql?api_key={potato_api_key}"
+headers = {
+    "X-Bot-Key": bank_bot_key,
+    "X-Api-Key": api_key
+}
+
+
 
 intents = discord.Intents.all()
 
@@ -282,6 +291,8 @@ async def withdraw(ctx, ping:bool=True, money:str='0', food:str='0', coal:str='0
                             title=f"``{account['nation_name']}``'s withdrawal request.",
                             description=f'''
 *double check nation name*^
+Nation/Account ID : {account['_id']}
+
 Money : {"${:,.2f}".format(money)}
 Food : {"{:,.2f}".format(food)}
 Coal : {"{:,.2f}".format(coal)}
@@ -312,6 +323,257 @@ Aluminum : {"{:,.2f}".format(aluminum)}
     else:
         await ctx.respond('I don\'t serve landlubbers.')
 
+
+
+bank = discord.SlashCommandGroup("bank", "Commands for Arrgh bank, for Helm use only.")
+
+
+@bank.command(description="Check contents of Arrgh bank.")
+async def balance(ctx,
+                  select_bank:discord.Option(str, "Check balance for Arrgh bank", choices=["Arrgh Bank", "Potato Bank"]),):
+    await ctx.defer(ephemeral=True)
+    helm = discord.utils.get(ctx.guild.roles, name="Helm")
+    if helm not in ctx.author.roles:
+        await ctx.respond("You do not have permission to use this command.")
+        return
+    if select_bank == "Arrgh Bank":
+        async with aiohttp.ClientSession() as session:
+            async with session.post(graphql, json={'query':"query{alliances(id:913){data{money coal oil uranium lead iron bauxite gasoline munitions steel aluminum food}}}"}) as query:        
+                result = await query.json()
+                balance = result['data']['alliances']['data'][0]
+                embed = discord.Embed(title="Arrgh Bank Balance", description=f'''
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+                                      ''')
+                await ctx.respond(embed=embed)
+    elif select_bank == "Potato Bank":
+        async with aiohttp.ClientSession() as session:
+            async with session.post(potato_graphql, json={'query':"query{alliances(id:13633){data{money coal oil uranium lead iron bauxite gasoline munitions steel aluminum food}}}"}) as query:        
+                result = await query.json()
+                balance = result['data']['alliances']['data'][0]
+                embed = discord.Embed(title="Potato Bank Balance", description=f'''
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+                                      ''')
+                await ctx.respond(embed=embed)
+
+
+@bank.command(description="Transfer ALL contents of Arrgh bank to Yarr or Potato bank")
+async def flush(ctx,
+                  select_bank:discord.Option(str, "Flush balance to Yarr or Potato bank", choices=["Yarr Bank", "Potato Bank", "Custom"]),
+                  custom_aa_id:discord.Option(int, "If custom, enter alliance ID here", required=False),
+                  note:discord.Option(str, "Optional note", required=False, default="I am bot.")):
+    await ctx.defer()
+    
+    helm = discord.utils.get(ctx.guild.roles, name="Helm")
+    if helm not in ctx.author.roles:
+        await ctx.respond("You do not have permission to use this command.")
+        return
+    
+    channel = client.get_channel(400427307334107158)
+    if ctx.channel != channel:
+        await ctx.respond(f"This command can only be used in {channel.mention}.")
+        return
+    
+    if select_bank == "Yarr Bank":
+        async with aiohttp.ClientSession() as session:
+            async with session.post(graphql, json={'query':"query{alliances(id:913){data{money food coal oil uranium lead iron bauxite gasoline munitions steel aluminum}}}"}) as query:        
+                result = await query.json()
+                balance = result['data']['alliances']['data'][0]
+                if balance['money'] < 1 and balance['food'] < 1 and balance['coal'] < 1 and balance['oil'] < 1 and balance['uranium'] < 1 and balance['lead'] < 1 and balance['iron'] < 1 and balance['bauxite'] < 1 and balance['gasoline'] < 1 and balance['munitions'] < 1 and balance['steel'] < 1 and balance['aluminum'] < 1:
+                    await ctx.respond("Arrgh bank is empty, nothing to flush.")
+                    return
+                embed = discord.Embed(title="Arrgh Bank Balance", description=f'''
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+
+All this will be transferred to Yarr bank.
+React with 👍 to confirm transfer, or 👎 to cancel.
+''')
+                message = await ctx.respond(embed=embed)
+                await message.add_reaction("👍")
+                await message.add_reaction("👎")
+                def check(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in ["👍", "👎"] and reaction.message.id == message.id
+                try:
+                    reaction, user = await client.wait_for('reaction_add', timeout=20.0, check=check)
+                except asyncio.TimeoutError:
+                    await ctx.respond('👎 Transfer timed out.')
+                    await message.delete()
+                    return
+                
+                if str(reaction.emoji) == "👎":
+                    await ctx.respond('👎 Transfer cancelled.')
+                    await message.delete()
+                    return
+                elif str(reaction.emoji) == "👍":
+                    try:
+                        async with session.post(graphql, headers=headers, json={'query':f'mutation{{bankWithdraw(note:"{ctx.author.display_name} says {note}" receiver:4150 receiver_type:2 money:{balance["money"]} food:{balance["food"]} coal:{balance["coal"]} oil:{balance["oil"]} uranium:{balance["uranium"]} lead:{balance["lead"]} iron:{balance["iron"]} bauxite:{balance["bauxite"]} gasoline:{balance["gasoline"]} munitions:{balance["munitions"]} steel:{balance["steel"]} aluminum:{balance["aluminum"]} ) {{id}}}}'}) as query:
+                            result = await query.json()
+                            if query.status != 200:
+                                await ctx.respond(f"Connection Error: {query.status}")
+                                await message.delete()
+                                return
+                    except Exception as e:
+                        await ctx.respond(f"Error making this transaction: {e}")
+                        await message.delete()
+                        return
+                    await message.delete()
+                    if 'errors' in result:
+                        await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
+                        return
+                    await ctx.respond(f"Flushed all assets to Yarr bank with transaction ID: {result['data']['bankWithdraw']['id']}")
+
+    elif select_bank == "Potato Bank":
+        async with aiohttp.ClientSession() as session:
+            async with session.post(graphql, json={'query':"query{alliances(id:913){data{money food coal oil uranium lead iron bauxite gasoline munitions steel aluminum}}}"}) as query:        
+                result = await query.json()
+                balance = result['data']['alliances']['data'][0]
+                if balance['money'] < 1 and balance['food'] < 1 and balance['coal'] < 1 and balance['oil'] < 1 and balance['uranium'] < 1 and balance['lead'] < 1 and balance['iron'] < 1 and balance['bauxite'] < 1 and balance['gasoline'] < 1 and balance['munitions'] < 1 and balance['steel'] < 1 and balance['aluminum'] < 1:
+                    await ctx.respond("Arrgh bank is empty, nothing to flush.")
+                    return
+                embed = discord.Embed(title="Arrgh Bank Balance", description=f'''
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+
+All this will be transferred to Potato bank.
+React with 👍 to confirm transfer, or 👎 to cancel.
+''')
+                message = await ctx.respond(embed=embed)
+                await message.add_reaction("👍")
+                await message.add_reaction("👎")
+                def check(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in ["👍", "👎"] and reaction.message.id == message.id
+                try:
+                    reaction, user = await client.wait_for('reaction_add', timeout=20.0, check=check)
+                except asyncio.TimeoutError:
+                    await ctx.respond('👎 Transfer timed out.')
+                    await message.delete()
+                    return
+                if str(reaction.emoji) == "👎":
+                    await ctx.respond('👎 Transfer cancelled.')
+                    await message.delete()
+                    return
+                elif str(reaction.emoji) == "👍":
+                    try:
+                        async with session.post(graphql, headers=headers, json={'query':f'mutation{{bankWithdraw(note:"{ctx.author.display_name} says {note}" receiver:13633 receiver_type:2 money:{balance["money"]} food:{balance["food"]} coal:{balance["coal"]} oil:{balance["oil"]} uranium:{balance["uranium"]} lead:{balance["lead"]} iron:{balance["iron"]} bauxite:{balance["bauxite"]} gasoline:{balance["gasoline"]} munitions:{balance["munitions"]} steel:{balance["steel"]} aluminum:{balance["aluminum"]} ) {{id}}}}'}) as query:
+                            result = await query.json()
+                            if query.status != 200:
+                                await ctx.respond(f"Connection Error: {query.status}")
+                                await message.delete()
+                                return
+                    except Exception as e:
+                        await ctx.respond(f"Error making this transaction: {e}")
+                        await message.delete()
+                        return
+                    await message.delete()
+                    if 'errors' in result:
+                        await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
+                        return
+                    await ctx.respond(f"Flushed all assets to Potato bank with transaction ID: {result['data']['bankWithdraw']['id']}")
+
+    
+    
+    elif select_bank == "Custom":
+        if custom_aa_id is None:
+            await ctx.respond("You must enter a custom alliance ID if you select Custom.")
+            return
+        async with aiohttp.ClientSession() as session:
+            async with session.post(graphql, json={'query':"query{alliances(id:913){data{money food coal oil uranium lead iron bauxite gasoline munitions steel aluminum}}}"}) as query:        
+                result = await query.json()
+                balance = result['data']['alliances']['data'][0]
+                if balance['money'] < 1 and balance['food'] < 1 and balance['coal'] < 1 and balance['oil'] < 1 and balance['uranium'] < 1 and balance['lead'] < 1 and balance['iron'] < 1 and balance['bauxite'] < 1 and balance['gasoline'] < 1 and balance['munitions'] < 1 and balance['steel'] < 1 and balance['aluminum'] < 1:
+                    await ctx.respond("Arrgh bank is empty, nothing to flush.")
+                    return
+                embed = discord.Embed(title="Arrgh Bank Balance", description=f'''
+Money : {"${:,.2f}".format(balance["money"])}
+Food : {"{:,.2f}".format(balance["food"])}
+Coal : {"{:,.2f}".format(balance["coal"])}
+Oil : {"{:,.2f}".format(balance["oil"])}
+Uranium : {"{:,.2f}".format(balance["uranium"])}
+Lead : {"{:,.2f}".format(balance["lead"])}
+Iron : {"{:,.2f}".format(balance["iron"])}
+Bauxite : {"{:,.2f}".format(balance["bauxite"])}
+Gasoline : {"{:,.2f}".format(balance["gasoline"])}
+Munitions : {"{:,.2f}".format(balance["munitions"])}
+Steel : {"{:,.2f}".format(balance["steel"])}
+Aluminum : {"{:,.2f}".format(balance["aluminum"])}
+
+All this will be transferred to alliance ID {custom_aa_id}.
+React with 👍 to confirm transfer, or 👎 to cancel.
+''')
+                message = await ctx.respond(embed=embed)
+                await message.add_reaction("👍")
+                await message.add_reaction("👎")
+                def check(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in ["👍", "👎"] and reaction.message.id == message.id
+                try:
+                    reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=check)
+                except asyncio.TimeoutError:
+                    await ctx.respond('👎 Transfer timed out.')
+                    await message.delete()
+                    return
+                if str(reaction.emoji) == "👎":
+                    await ctx.respond('👎 Transfer cancelled.')
+                    await message.delete()
+                    return
+                elif str(reaction.emoji) == "👍":
+                    try:
+                        async with session.post(graphql, headers=headers, json={'query':f'mutation{{bankWithdraw(note:"{ctx.author.display_name} says {note}" receiver:{custom_aa_id} receiver_type:2 money:{balance["money"]} food:{balance["food"]} coal:{balance["coal"]} oil:{balance["oil"]} uranium:{balance["uranium"]} lead:{balance["lead"]} iron:{balance["iron"]} bauxite:{balance["bauxite"]} gasoline:{balance["gasoline"]} munitions:{balance["munitions"]} steel:{balance["steel"]} aluminum:{balance["aluminum"]} ) {{id}}}}'}) as query:
+                            result = await query.json()
+                            if query.status != 200:
+                                await ctx.respond(f"Connection Error: {query.status}")
+                                await message.delete()
+                                return
+                    except Exception as e:
+                        await ctx.respond(f"Error making this transaction: {e}")
+                        await message.delete()
+                        return
+                    await message.delete()
+                    if 'errors' in result:
+                        await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
+                        return
+                    await ctx.respond(f"Flushed all assets to alliance ID {custom_aa_id} with transaction ID: {result['data']['bankWithdraw']['id']}")
 
 
 
