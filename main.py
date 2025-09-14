@@ -15,12 +15,13 @@ api_key = os.environ['API_KEY']
 db_client = MongoClient(os.environ['DB_ACCESS_URL'])
 db = db_client.get_database('the_accountant_db')
 graphql = f"https://api.politicsandwar.com/graphql?api_key={api_key}"
+sam_api_key = os.environ['SAM_API_KEY']
 potato_api_key = os.environ['POTATO_API_KEY']
 bank_bot_key = os.environ['X_BOT_KEY']
 potato_graphql = f"https://api.politicsandwar.com/graphql?api_key={potato_api_key}"
 headers = {
     "X-Bot-Key": bank_bot_key,
-    "X-Api-Key": api_key
+    "X-Api-Key": sam_api_key
 }
 
 
