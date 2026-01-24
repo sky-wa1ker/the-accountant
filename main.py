@@ -32,7 +32,8 @@ client = discord.Bot(intents = intents)
 
 @client.event
 async def on_ready():
-    game = discord.Game("with pirate coins.")
+    await client.wait_until_ready()
+    game = discord.Game("playig with pirate coins.")
     await client.change_presence(status=discord.Status.online, activity=game)
     if not csvexport.is_running():
         csvexport.start()
