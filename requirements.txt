@@ -1,6 +1,6 @@
-aiohttp
-asyncio
-pymongo
-dnspython
+aiohttp==3.8.6 
+asyncio==4.0.0
+pymongo==4.14.1
+dnspython==2.7.0
 datetime
-py-cord
+py-cord==2.6.1
