@@ -47,6 +47,18 @@ async def on_ready():
 
 
 
+async def resolve_channel(channel_id: int):
+    channel = client.get_channel(channel_id)
+    if channel:
+        return channel
+    else:
+        return await client.fetch_channel(channel_id)
+
+
+
+
+
+
 balance = discord.SlashCommandGroup("balance", "Balance related commands")
 
 @balance.command(description="Check your balance in Arrgh bank.")
@@ -151,7 +163,7 @@ Total Bank Value : **{bank_total_value}**
 @balance.command(description="Helm uses this to add money to an account")
 async def add(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
-    channel = client.get_channel(542384682818600971)
+    channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
         if role in ctx.author.roles:
             account = db.accounts.find_one({'_id':nation_id})
@@ -199,7 +211,7 @@ Virtual transaction ID is : ``{last_tx_id}``
 @balance.command(description="Helm uses this to deduct money from an account")
 async def deduct(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
-    channel = client.get_channel(542384682818600971)
+    channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
         if role in ctx.author.roles:
             account = db.accounts.find_one({'_id':nation_id})
@@ -250,7 +262,7 @@ async def withdraw(ctx, ping:bool=True, money:str='0', food:str='0', coal:str='0
     helm = discord.utils.get(ctx.guild.roles, name="Helm")
     misc = db.misc.find_one({'_id':True})
     current_offshore = misc['current_offshore']
-    channel = client.get_channel(400427307334107158)
+    channel = await resolve_channel(400427307334107158)
     if role in ctx.author.roles:
         if ctx.channel == channel:
             account = db.accounts.find_one({"discord_id":ctx.author.id})
@@ -392,7 +404,7 @@ async def flush(ctx,
         await ctx.respond("You do not have permission to use this command.")
         return
     
-    channel = client.get_channel(400427307334107158)
+    channel = await resolve_channel(400427307334107158)
     if ctx.channel != channel:
         await ctx.respond(f"This command can only be used in {channel.mention}.")
         return
@@ -697,7 +709,7 @@ async def withdraw(ctx,
         await ctx.respond("You do not have permission to use this command. If you are a captain needing a withdrawal, use the ``/withdrawal`` command instead.")
         return
     
-    channel = client.get_channel(400427307334107158)
+    channel = await resolve_channel(400427307334107158)
     if ctx.channel != channel:
         await ctx.respond(f"This command can only be used in {channel.mention}.")
         return
@@ -1019,7 +1031,7 @@ async def add(ctx, note:str, nation_id:int, name:str, money:int=0, food:int=0, c
               gasoline:int=0, munitions:int=0, steel:int=0, aluminum:int=0):
     
     await ctx.defer()
-    channel = client.get_channel(542384682818600971)
+    channel = await resolve_channel(542384682818600971)
     admiral = discord.utils.get(ctx.guild.roles, name="Admiral")
     last_loan = db.loans.find().sort([('_id', -1)]).limit(1)
     last_loan_id = dict(last_loan[0])["_id"] + 1
@@ -1071,9 +1083,9 @@ client.add_application_command(loan)
 @tasks.loop(minutes=5)
 async def transaction_scanner():
     role = discord.utils.get(client.get_guild(220361410616492033).roles, id=576711598912045056)
-    channel = client.get_channel(798609356715196424) 
-    opsec_channel = client.get_channel(1031144610417868874)
-    logs_channel = client.get_channel(312420656312614912)
+    channel = await resolve_channel(798609356715196424) 
+    opsec_channel = await resolve_channel(1031144610417868874)
+    logs_channel = await resolve_channel(312420656312614912)
     accounts_cursor = db.accounts.find({"account_type":"active"},{"_id":1})
     account_ids = []
     for x in accounts_cursor:
@@ -1234,7 +1246,7 @@ Food : {transaction['food']}''', color=dcolor)
 
 @tasks.loop(hours=4)
 async def csvexport():
-    channel = client.get_channel(312420656312614912)
+    channel = await resolve_channel(312420656312614912)
     acc = db.accounts.find({})
     accounts = [x for x in acc]
     if accounts:
@@ -1254,7 +1266,7 @@ async def csvexport():
 
 @tasks.loop(minutes=360)
 async def name_update():
-    logs_channel = client.get_channel(312420656312614912)
+    logs_channel = await resolve_channel(312420656312614912)
     accounts_cursor = db.accounts.find()
     accounts = []
     for x in accounts_cursor:
