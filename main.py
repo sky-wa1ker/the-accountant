@@ -86,7 +86,7 @@ async def check(ctx,
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
                     color = discord.Colour.red()
-                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+                embed = discord.Embed(title=f"({account['_id']}){account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -132,7 +132,7 @@ Total Bank Value : **{bank_total_value}**
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
                     color = discord.Colour.red()
-                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+                embed = discord.Embed(title=f"({account['_id']}){account['nation_name']}\'s account balance.", description=f'''
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -161,7 +161,7 @@ Total Bank Value : **{bank_total_value}**
 
 
 @balance.command(description="Helm uses this to add money to an account")
-async def add(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
+async def add(ctx, nation_id:int, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0',*, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
@@ -209,7 +209,7 @@ Virtual transaction ID is : ``{last_tx_id}``
 
 
 @balance.command(description="Helm uses this to deduct money from an account")
-async def deduct(ctx, nation_id:int, money:str, food:str, coal:str, oil:str, uranium:str, lead:str, iron:str, bauxite:str, gasoline:str, munitions:str, steel:str, aluminum:str,*, note):
+async def deduct(ctx, nation_id:int, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0',*, note):
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
@@ -466,7 +466,7 @@ React with 👍 to confirm transfer, or 👎 to cancel.
                     if 'errors' in result:
                         await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
                         return
-                    await ctx.respond(f"Flushed all assets to Yarr bank with transaction ID: {result['data']['bankWithdraw']['id']}")
+                    await ctx.respond(f"{ctx.author.display_name} flushed all assets to Yarr bank with transaction ID: {result['data']['bankWithdraw']['id']}")
 
     elif select_bank == "Potato Bank":
         async with aiohttp.ClientSession() as session:
@@ -524,7 +524,7 @@ React with 👍 to confirm transfer, or 👎 to cancel.
                     if 'errors' in result:
                         await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
                         return
-                    await ctx.respond(f"Flushed all assets to Potato bank with transaction ID: {result['data']['bankWithdraw']['id']}")
+                    await ctx.respond(f"{ctx.author.display_name} flushed all assets to Potato bank with transaction ID: {result['data']['bankWithdraw']['id']}")
 
     
     
@@ -587,7 +587,7 @@ React with 👍 to confirm transfer, or 👎 to cancel.
                     if 'errors' in result:
                         await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
                         return
-                    await ctx.respond(f"Flushed all assets to alliance ID {custom_aa_id} with transaction ID: {result['data']['bankWithdraw']['id']}")
+                    await ctx.respond(f"{ctx.author.display_name} flushed all assets to alliance ID {custom_aa_id} with transaction ID: {result['data']['bankWithdraw']['id']}")
 
 
 
@@ -688,7 +688,7 @@ In 60 seconds react with 👍 to confirm or 👎 to cancel.
                 return
             await message.delete()
             await ctx.respond(f'''
-Transferred following from {from_bank} to ({receiver_id}) {receiver} with transaction ID: {result['data']['bankWithdraw']['id']}
+{ctx.author.display_name} transferred following from {from_bank} to ({receiver_id}) {receiver} with transaction ID: {result['data']['bankWithdraw']['id']}
 ```Money : {"${:,.2f}".format(money)}, Food : {"{:,.2f}".format(food)}, Coal : {"{:,.2f}".format(coal)}, Oil : {"{:,.2f}".format(oil)}, Uranium : {"{:,.2f}".format(uranium)}, Lead : {"{:,.2f}".format(lead)}, Iron : {"{:,.2f}".format(iron)}, Bauxite : {"{:,.2f}".format(bauxite)}, Gasoline : {"{:,.2f}".format(gasoline)}, Munitions : {"{:,.2f}".format(munitions)}, Steel : {"{:,.2f}".format(steel)}, Aluminum : {"{:,.2f}".format(aluminum)}```
 ''')
             
@@ -785,7 +785,7 @@ In 60 seconds, react with 👍 to confirm or 👎 to cancel.
                     await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
                     return
                 await message.delete()
-                await ctx.respond(f'''Sent following from Arrgh Bank to ({captain_id}) {captain} with transaction ID: {result['data']['bankWithdraw']['id']}
+                await ctx.respond(f'''{ctx.author.display_name} sent following from Arrgh Bank to ({captain_id}) {captain} with transaction ID: {result['data']['bankWithdraw']['id']}
 ```Money : {"${:,.2f}".format(money)}, Food : {"{:,.2f}".format(food)}, Coal : {"{:,.2f}".format(coal)}, Oil : {"{:,.2f}".format(oil)}, Uranium : {"{:,.2f}".format(uranium)}, Lead : {"{:,.2f}".format(lead)}, Iron : {"{:,.2f}".format(iron)}, Bauxite : {"{:,.2f}".format(bauxite)}, Gasoline : {"{:,.2f}".format(gasoline)}, Munitions : {"{:,.2f}".format(munitions)}, Steel : {"{:,.2f}".format(steel)}, Aluminum : {"{:,.2f}".format(aluminum)}```
 ''')
 
@@ -826,7 +826,7 @@ In 60 seconds, react with 👍 to confirm or 👎 to cancel.
                     await ctx.respond(f"Error from server: {result['errors'][0]['message']}")
                     return
                 await message.delete()
-                await ctx.respond(f'''Sent following from Potato Bank to ({captain_id}) {captain} with transaction ID: {result['data']['bankWithdraw']['id']}
+                await ctx.respond(f'''{ctx.author.display_name} sent following from Potato Bank to ({captain_id}) {captain} with transaction ID: {result['data']['bankWithdraw']['id']}
 ```Money : {"${:,.2f}".format(money)}, Food : {"{:,.2f}".format(food)}, Coal : {"{:,.2f}".format(coal)}, Oil : {"{:,.2f}".format(oil)}, Uranium : {"{:,.2f}".format(uranium)}, Lead : {"{:,.2f}".format(lead)}, Iron : {"{:,.2f}".format(iron)}, Bauxite : {"{:,.2f}".format(bauxite)}, Gasoline : {"{:,.2f}".format(gasoline)}, Munitions : {"{:,.2f}".format(munitions)}, Steel : {"{:,.2f}".format(steel)}, Aluminum : {"{:,.2f}".format(aluminum)}```
 ''')
 
