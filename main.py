@@ -88,6 +88,7 @@ async def check(ctx,
                     color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
 ID: {account['_id']}
+
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -134,7 +135,8 @@ Total Bank Value : **{bank_total_value}**
                 elif account["account_type"] == 'inactive':
                     color = discord.Colour.red()
                 embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
-ID: {account['_id']}                  
+ID: {account['_id']}
+
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -655,6 +657,7 @@ async def transfer(ctx,
 
     embed = discord.Embed(title="Confirm Transfer", description=f'''
 Transferring the following from {from_bank} to ({receiver_id}) {receiver}
+
 Do **NOT** use this command for internal withdrawals to captains, only use for third party transfers to other alliances or nations.
 
 Money : {"${:,.2f}".format(money)}
