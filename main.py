@@ -86,7 +86,8 @@ async def check(ctx,
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
                     color = discord.Colour.red()
-                embed = discord.Embed(title=f"({account['_id']}){account['nation_name']}\'s account balance.", description=f'''
+                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+ID: {account['_id']}
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -132,7 +133,8 @@ Total Bank Value : **{bank_total_value}**
                     color = discord.Colour.green()
                 elif account["account_type"] == 'inactive':
                     color = discord.Colour.red()
-                embed = discord.Embed(title=f"({account['_id']}){account['nation_name']}\'s account balance.", description=f'''
+                embed = discord.Embed(title=f"{account['nation_name']}\'s account balance.", description=f'''
+ID: {account['_id']}                  
 Money : {"${:,.2f}".format(balance["money"])}
 Food : {"{:,.2f}".format(balance["food"])}
 Coal : {"{:,.2f}".format(balance["coal"])}
@@ -160,8 +162,16 @@ Total Bank Value : **{bank_total_value}**
 
 
 
+
+
 @balance.command(description="Helm uses this to add money to an account")
-async def add(ctx, nation_id:int, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0',*, note):
+async def add(ctx,
+              nation_id:int,
+              note:discord.Option(str, "Mandatory note", required=True),
+              money:int=0, food:int=0, coal:int=0, oil:int=0, uranium:int=0, lead:int=0, iron:int=0, bauxite:int=0, gasoline:int=0, munitions:int=0, steel:int=0, aluminum:int=0):
+    if money == 0 and food == 0 and coal == 0 and oil == 0 and uranium == 0 and lead == 0 and iron == 0 and bauxite == 0 and gasoline == 0 and munitions == 0 and steel == 0 and aluminum == 0:
+        await ctx.respond('All values cannot be zero.', ephemeral=True)
+        return
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
@@ -209,7 +219,14 @@ Virtual transaction ID is : ``{last_tx_id}``
 
 
 @balance.command(description="Helm uses this to deduct money from an account")
-async def deduct(ctx, nation_id:int, money:str='0', food:str='0', coal:str='0', oil:str='0', uranium:str='0', lead:str='0', iron:str='0', bauxite:str='0', gasoline:str='0', munitions:str='0', steel:str='0', aluminum:str='0',*, note):
+async def deduct(ctx,
+              nation_id:int,
+              note:discord.Option(str, "Mandatory note", required=True),
+              money:int=0, food:int=0, coal:int=0, oil:int=0, uranium:int=0, lead:int=0, iron:int=0, bauxite:int=0, gasoline:int=0, munitions:int=0, steel:int=0, aluminum:int=0):
+    if money == 0 and food == 0 and coal == 0 and oil == 0 and uranium == 0 and lead == 0 and iron == 0 and bauxite == 0 and gasoline == 0 and munitions == 0 and steel == 0 and aluminum == 0:
+        await ctx.respond('All values cannot be zero.', ephemeral=True)
+        return
+    
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
@@ -638,6 +655,7 @@ async def transfer(ctx,
 
     embed = discord.Embed(title="Confirm Transfer", description=f'''
 Transferring the following from {from_bank} to ({receiver_id}) {receiver}
+Do **NOT** use this command for internal withdrawals to captains, only use for third party transfers to other alliances or nations.
 
 Money : {"${:,.2f}".format(money)}
 Food : {"{:,.2f}".format(food)}
