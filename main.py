@@ -181,18 +181,6 @@ async def add(ctx,
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 try:
-                    money = float(re.sub('\$|\,', '', money))
-                    food = float(food.replace(',', ''))
-                    coal = float(coal.replace(',', ''))
-                    oil = float(oil.replace(',', ''))
-                    uranium = float(uranium.replace(',', ''))
-                    lead = float(lead.replace(',', ''))
-                    iron = float(iron.replace(',', ''))
-                    bauxite = float(bauxite.replace(',', ''))
-                    gasoline = float(gasoline.replace(',', ''))
-                    munitions = float(munitions.replace(',', ''))
-                    steel = float(steel.replace(',', ''))
-                    aluminum = float(aluminum.replace(',', ''))
                     old_bal = account["balance"]
                     new_bal = {"money":(old_bal["money"] + money), "coal":(old_bal["coal"] + coal), "oil":(old_bal["oil"] + oil), "uranium":(old_bal["uranium"] + uranium), "iron":(old_bal["iron"] + iron), "bauxite":(old_bal["bauxite"] + bauxite), "lead":(old_bal["lead"] + lead), "gasoline":(old_bal["gasoline"] + gasoline), "munitions":(old_bal["munitions"] + munitions) ,"steel":(old_bal["steel"] + steel) ,"aluminum":(old_bal["aluminum"] + aluminum) ,"food":(old_bal["food"] + food)}
                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
@@ -207,7 +195,7 @@ note : ``{note}``
 Virtual transaction ID is : ``{last_tx_id}``
     ''')
                 except:
-                    await ctx.respond('There was an error, check your arguments.', ephemeral=True)
+                    await ctx.respond('There was an error.', ephemeral=True)
             else:
                 await ctx.respond('Could not find that account.', ephemeral=True)
         else:
@@ -227,8 +215,7 @@ async def deduct(ctx,
               money:int=0, food:int=0, coal:int=0, oil:int=0, uranium:int=0, lead:int=0, iron:int=0, bauxite:int=0, gasoline:int=0, munitions:int=0, steel:int=0, aluminum:int=0):
     if money == 0 and food == 0 and coal == 0 and oil == 0 and uranium == 0 and lead == 0 and iron == 0 and bauxite == 0 and gasoline == 0 and munitions == 0 and steel == 0 and aluminum == 0:
         await ctx.respond('All values cannot be zero.', ephemeral=True)
-        return
-    
+        return  
     role = discord.utils.get(ctx.guild.roles, name="Helm")
     channel = await resolve_channel(542384682818600971)
     if ctx.channel == channel:
@@ -236,18 +223,6 @@ async def deduct(ctx,
             account = db.accounts.find_one({'_id':nation_id})
             if account:
                 try:
-                    money = float(re.sub('\$|\,', '', money))
-                    food = float(food.replace(',', ''))
-                    coal = float(coal.replace(',', ''))
-                    oil = float(oil.replace(',', ''))
-                    uranium = float(uranium.replace(',', ''))
-                    lead = float(lead.replace(',', ''))
-                    iron = float(iron.replace(',', ''))
-                    bauxite = float(bauxite.replace(',', ''))
-                    gasoline = float(gasoline.replace(',', ''))
-                    munitions = float(munitions.replace(',', ''))
-                    steel = float(steel.replace(',', ''))
-                    aluminum = float(aluminum.replace(',', ''))
                     old_bal = account["balance"]
                     new_bal = {"money":(old_bal["money"] - money), "coal":(old_bal["coal"] - coal), "oil":(old_bal["oil"] - oil), "uranium":(old_bal["uranium"] - uranium), "iron":(old_bal["iron"] - iron), "bauxite":(old_bal["bauxite"] - bauxite), "lead":(old_bal["lead"] - lead), "gasoline":(old_bal["gasoline"] - gasoline), "munitions":(old_bal["munitions"] - munitions) ,"steel":(old_bal["steel"] - steel) ,"aluminum":(old_bal["aluminum"] - aluminum) ,"food":(old_bal["food"] - food)}
                     db.accounts.update_one(account, {"$set": {'balance':new_bal}})
